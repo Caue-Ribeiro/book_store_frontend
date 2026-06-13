@@ -2,70 +2,53 @@ import { Outlet, Link, useNavigate } from 'react-router-dom'
 import { Search, ShoppingBag, User, LogOut } from 'lucide-react'
 import { useAuthStore } from '../../store/useAuthStore'
 import { api } from '../../lib/api'
+
 export default function Layout() {
     const { token, logout } = useAuthStore()
     const navigate = useNavigate()
 
     const handleLogout = async () => {
         try {
-            // Call the backend logout endpoint you built
             await api.post('/logout')
-        } catch (error) {
+        } catch (err) {
             console.error(
                 'Logout failed on server, clearing local state anyway',
-                error,
+                err,
             )
         } finally {
             logout()
             navigate('/login')
         }
     }
+
     return (
-        <div className="min-h-screen flex flex-col">
-            <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-md border-b border-border">
-                <div className="flex items-center gap-4">
-                    <button className="p-2 hover:bg-muted rounded-full transition-colors">
-                        <Search className="w-5 h-5" />
-                    </button>
-
-                    <Link
-                        to={token ? '/profile' : '/login'}
-                        className="p-2 hover:bg-muted rounded-full transition-colors"
-                    >
-                        <User className="w-5 h-5" />
-                    </Link>
-
-                    <Link
-                        to="/cart"
-                        className="p-2 hover:bg-muted rounded-full transition-colors"
-                    >
-                        <ShoppingBag className="w-5 h-5" />
-                    </Link>
-                </div>
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-                    <div className="flex-1 flex items-center gap-6">
+        <div className="min-h-screen flex flex-col bg-background text-foreground antialiased">
+            {/* Header */}
+            <header className="sticky top-0 z-40 w-full border-b border-border bg-background/80 backdrop-blur">
+                <div className="max-w-7xl mx-auto h-16 flex items-center justify-between px-4 sm:px-6 lg:px-8">
+                    <div className="flex items-center gap-8">
                         <Link
                             to="/"
                             className="text-xl font-bold tracking-tighter uppercase"
                         >
                             Bookstore
                         </Link>
-                        <nav className="hidden md:flex gap-4 text-sm font-medium">
+                        <nav className="hidden md:flex items-center gap-6 text-xs font-semibold uppercase tracking-widest text-gray-500">
                             <Link
-                                to="/books"
-                                className="hover:text-gray-600 transition-colors"
+                                to="/?view=books"
+                                className="hover:text-foreground transition-colors"
                             >
                                 Books
                             </Link>
                             <Link
-                                to="/categories"
-                                className="hover:text-gray-600 transition-colors"
+                                to="/?view=categories"
+                                className="hover:text-foreground transition-colors"
                             >
                                 Categories
                             </Link>
                             <Link
-                                to="/authors"
-                                className="hover:text-gray-600 transition-colors"
+                                to="/?view=authors"
+                                className="hover:text-foreground transition-colors"
                             >
                                 Authors
                             </Link>
@@ -76,35 +59,38 @@ export default function Layout() {
                         <button className="p-2 hover:bg-muted rounded-full transition-colors">
                             <Search className="w-5 h-5" />
                         </button>
+
                         <Link
                             to={token ? '/profile' : '/login'}
                             className="p-2 hover:bg-muted rounded-full transition-colors"
                         >
                             <User className="w-5 h-5" />
                         </Link>
+
                         <Link
                             to="/cart"
                             className="p-2 hover:bg-muted rounded-full transition-colors"
                         >
                             <ShoppingBag className="w-5 h-5" />
                         </Link>
+
+                        {token && (
+                            <button
+                                onClick={handleLogout}
+                                className="p-2 hover:bg-muted rounded-full transition-colors"
+                                title="Logout"
+                            >
+                                <LogOut className="w-5 h-5" />
+                            </button>
+                        )}
                     </div>
                 </div>
             </header>
 
-            <main className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full py-8">
+            {/* Main Content */}
+            <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
                 <Outlet />
             </main>
-
-            <footer className="border-t border-border mt-auto">
-                <div className="max-w-7xl mx-auto px-4 py-8 text-sm text-gray-500 flex justify-between">
-                    <p>© 2026 Bookstore. All rights reserved.</p>
-                    <div className="flex gap-4">
-                        <Link to="/terms">Terms</Link>
-                        <Link to="/privacy">Privacy</Link>
-                    </div>
-                </div>
-            </footer>
         </div>
     )
 }

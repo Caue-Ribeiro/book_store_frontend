@@ -6,6 +6,15 @@ import Layout from './components/layout/Layout'
 import BookDetails from './pages/BookDetails'
 import Cart from './pages/Cart'
 import Profile from './pages/Profile'
+import Orders from './pages/Orders'
+
+import AdminRoute from './components/auth/AdminRoute'
+import AdminLayout from './components/layout/AdminLayout'
+import Dashboard from './pages/admin/Dashboard'
+import AdminBooks from './pages/admin/Books'
+import AdminAuthors from './pages/admin/Authors'
+import AdminCategories from './pages/admin/Categories'
+import AdminUsers from './pages/admin/Users'
 
 function App() {
     return (
@@ -18,7 +27,23 @@ function App() {
                     <Route path="books/:id" element={<BookDetails />} />
                     <Route path="cart" element={<Cart />} />
                     <Route path="profile" element={<Profile />} />
+                    <Route path="orders" element={<Orders />} />
                     {/* Future routes will go here (e.g., /books/:id, /admin) */}
+                </Route>
+
+                <Route element={<AdminRoute />}>
+                    <Route path="/admin" element={<AdminLayout />}>
+                        <Route index element={<Dashboard />} />
+                        <Route path="books" element={<AdminBooks />} />
+                        <Route path="authors" element={<AdminAuthors />} />
+                        <Route
+                            path="categories"
+                            element={<AdminCategories />}
+                        />
+                        <Route path="users" element={<AdminUsers />} />
+                        {/* Future Admin Routes will go here */}
+                        {/* <Route path="books" element={<AdminBooks />} /> */}
+                    </Route>
                 </Route>
             </Routes>
         </Router>

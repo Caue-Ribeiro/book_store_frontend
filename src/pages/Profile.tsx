@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { api } from '../lib/api'
 import { useAuthStore } from '../store/useAuthStore'
-import { Shield, Clock, Key } from 'lucide-react'
+import { Shield, Clock, Key, Package } from 'lucide-react'
 
 interface AuditLog {
     id: string
@@ -85,6 +85,7 @@ export default function Profile() {
                 `/api/users/${user?.id}/audit-logs?sort=timestamp,desc&size=10`,
             )
             setLogs(response.data.content || response.data)
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (err: any) {
             if (err.response?.status === 400) {
                 setUpdateStatus({
@@ -200,6 +201,23 @@ export default function Profile() {
                                     : 'Update Password'}
                             </button>
                         </form>
+                    </section>
+
+                    <section>
+                        <h2 className="text-xs font-bold uppercase tracking-widest text-gray-500 mb-6 flex items-center gap-2">
+                            <Package className="w-4 h-4" /> My Orders
+                        </h2>
+                        <div className="bg-muted/30 border border-border p-6 text-center">
+                            <p className="text-xs text-gray-500 mb-4 uppercase tracking-widest">
+                                View tracking and purchase history
+                            </p>
+                            <button
+                                onClick={() => navigate('/orders')}
+                                className="w-full border border-foreground text-foreground py-3 text-xs font-bold uppercase tracking-widest hover:bg-foreground hover:text-background transition-colors"
+                            >
+                                View Order History
+                            </button>
+                        </div>
                     </section>
                 </div>
 
