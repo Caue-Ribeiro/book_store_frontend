@@ -149,19 +149,25 @@ export default function Home() {
                     <h2 className="text-xs font-bold uppercase tracking-widest text-gray-400 text-center">
                         Our Authors
                     </h2>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-4xl mx-auto">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 max-w-5xl mx-auto">
                         {authors.map(author => (
-                            <div
+                            <Link
+                                to={`/authors/${author.id}`}
                                 key={author.id}
-                                className="p-6 border border-border bg-muted/10"
+                                className="group p-8 border border-border bg-background hover:bg-foreground hover:text-background transition-colors flex flex-col justify-between h-40"
                             >
-                                <h3 className="font-bold uppercase tracking-tight text-sm">
-                                    {author.name} {author.lastName}
-                                </h3>
-                                <p className="text-[10px] text-gray-400 uppercase tracking-widest mt-1">
-                                    Contributor
-                                </p>
-                            </div>
+                                <div>
+                                    <h3 className="font-bold uppercase tracking-tight text-lg mb-1">
+                                        {author.name} {author.lastName}
+                                    </h3>
+                                    <p className="text-[10px] text-gray-400 uppercase tracking-widest group-hover:text-gray-300 transition-colors">
+                                        Contributor
+                                    </p>
+                                </div>
+                                <span className="text-[10px] font-bold uppercase tracking-widest text-right opacity-0 group-hover:opacity-100 transition-opacity">
+                                    View Profile →
+                                </span>
+                            </Link>
                         ))}
                     </div>
                 </section>

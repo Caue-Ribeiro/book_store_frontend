@@ -1,5 +1,5 @@
 import { Outlet, Link, useNavigate } from 'react-router-dom'
-import { Search, ShoppingBag, User, LogOut } from 'lucide-react'
+import { Search, ShoppingBag, User, LogOut, Sparkles } from 'lucide-react'
 import { useAuthStore } from '../../store/useAuthStore'
 import { api } from '../../lib/api'
 
@@ -51,6 +51,18 @@ export default function Layout() {
                                 className="hover:text-foreground transition-colors"
                             >
                                 Authors
+                            </Link>
+                            <Link
+                                to="/events"
+                                className="hover:text-foreground transition-colors"
+                            >
+                                Events
+                            </Link>
+                            <Link
+                                to="/oracle"
+                                className="flex items-center gap-1 text-foreground hover:text-gray-500 transition-colors"
+                            >
+                                <Sparkles className="w-3 h-3" /> Oracle
                             </Link>
                         </nav>
                     </div>

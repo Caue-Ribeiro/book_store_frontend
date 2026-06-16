@@ -7,6 +7,9 @@ import BookDetails from './pages/BookDetails'
 import Cart from './pages/Cart'
 import Profile from './pages/Profile'
 import Orders from './pages/Orders'
+import AuthorDetails from './pages/AuthorDetails'
+import BookEvents from './pages/BookEvents'
+import ReaderDiscovery from './pages/ReaderDiscovery'
 
 import AdminRoute from './components/auth/AdminRoute'
 import AdminLayout from './components/layout/AdminLayout'
@@ -28,6 +31,9 @@ function App() {
                     <Route path="cart" element={<Cart />} />
                     <Route path="profile" element={<Profile />} />
                     <Route path="orders" element={<Orders />} />
+                    <Route path="authors/:id" element={<AuthorDetails />} />
+                    <Route path="events" element={<BookEvents />} />
+                    <Route path="oracle" element={<ReaderDiscovery />} />
                     {/* Future routes will go here (e.g., /books/:id, /admin) */}
                 </Route>
 
