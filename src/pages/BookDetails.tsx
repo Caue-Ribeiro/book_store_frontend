@@ -3,8 +3,8 @@ import { useParams, Link, useNavigate } from 'react-router-dom'
 import { api } from '../lib/api'
 import { ArrowLeft } from 'lucide-react'
 import { useAuthStore } from '../store/useAuthStore'
+import { useCartStore } from '../store/useCartStore'
 
-// Interfaces matching your Spring Boot DTOs exactly
 interface Author {
     id: number
     name: string
@@ -13,7 +13,7 @@ interface Author {
 
 interface Category {
     id: number
-    type: string // Updated based on your backend CategoryDTO instantiation
+    type: string
 }
 
 interface Book {
@@ -24,9 +24,9 @@ interface Book {
     stock: number
     price: number
     description: string
-    coverImageUrl?: string // Matched to BookDTO
-    authors: Author[] // Added from BookResponseDTO
-    categories: Category[] // Added from BookResponseDTO
+    coverImageUrl?: string
+    authors: Author[]
+    categories: Category[]
 }
 
 export default function BookDetails() {
@@ -38,6 +38,7 @@ export default function BookDetails() {
     const { user } = useAuthStore()
     const [isAdding, setIsAdding] = useState(false)
     const [addSuccess, setAddSuccess] = useState(false)
+    const addItem = useCartStore(state => state.addItem)
 
     useEffect(() => {
         const fetchBookDetails = async () => {
@@ -95,15 +96,15 @@ export default function BookDetails() {
         try {
             setIsAdding(true)
             setAddSuccess(false)
-            // Calls POST /api/orders/users/{userId}/cart/items/{bookId}?quantity=1
+
             const test = await api.post(
                 `/api/orders/users/${user.id}/cart/items/${book.id}?quantity=1&coverImageUrl=${book.coverImageUrl}`,
             )
             console.log(test)
+            addItem(book)
 
             setAddSuccess(true)
 
-            // Reset success message after 3 seconds
             setTimeout(() => setAddSuccess(false), 3000)
         } catch (err) {
             console.error('Failed to add to cart', err)

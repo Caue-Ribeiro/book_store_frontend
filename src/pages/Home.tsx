@@ -1,7 +1,10 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import { useState, useEffect } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { api } from '../lib/api'
 import axios from 'axios'
+import { ChevronLeft, ChevronRight } from 'lucide-react'
 
 interface Author {
     id: number
@@ -31,24 +34,57 @@ export default function Home() {
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState('')
 
-    // Read active filter selections from URL parameters
-    const currentView = searchParams.get('view') || 'books'
+    const [page, setPage] = useState(0)
+    const [totalPages, setTotalPages] = useState(1)
+
     const activeCategory = searchParams.get('category') || 'All'
+    const searchQuery = searchParams.get('search') || ''
+    const currentView = searchParams.get('view') || 'books'
 
     useEffect(() => {
         let isMounted = true
 
-        const fetchStorefrontData = async () => {
+        const fetchStorefrontData = async (activeCat: string) => {
+            let booksResponse: any,
+                categoriesResponse: any,
+                authorsResponse: any
             try {
-                const [booksResponse, categoriesResponse, authorsResponse] =
-                    await Promise.all([
-                        api.get('/api/books'),
+                setLoading(true)
+
+                if (activeCat == 'All') {
+                    const response = await Promise.all([
+                        api.get(`/api/books?page=${page}&size=12`),
                         api.get('/api/categories'),
                         api.get('/api/authors'),
                     ])
 
+                    booksResponse = response[0]
+                    categoriesResponse = response[1]
+                    authorsResponse = response[2]
+                } else {
+                    activeCat =
+                        activeCat.includes(' ') || activeCat.includes('-')
+                            ? (activeCat = activeCat.replace(/[ -]/g, '_'))
+                            : activeCat
+
+                    const response = await Promise.all([
+                        api.get(
+                            `/api/books/category/${activeCat}?page=${page}&size=12`,
+                        ),
+                        api.get('/api/categories'),
+                        api.get('/api/authors'),
+                    ])
+
+                    booksResponse = response[0]
+                    categoriesResponse = response[1]
+                    authorsResponse = response[2]
+                }
+
                 if (isMounted) {
                     setBooks(booksResponse.data.content || booksResponse.data)
+
+                    setTotalPages(booksResponse.data.totalPages || 1)
+
                     setCategories(
                         categoriesResponse.data.content ||
                             categoriesResponse.data,
@@ -73,12 +109,12 @@ export default function Home() {
             }
         }
 
-        fetchStorefrontData()
+        fetchStorefrontData(activeCategory)
 
         return () => {
             isMounted = false
         }
-    }, [])
+    }, [page, activeCategory])
 
     if (loading) {
         return (
@@ -98,12 +134,23 @@ export default function Home() {
         )
     }
 
-    // Derived State: Filtering books locally based on selected criteria
     const filteredBooks = books.filter(book => {
-        if (activeCategory === 'All') return true
-        return book.categories?.some(
-            c => c.type.toUpperCase() === activeCategory.toUpperCase(),
-        )
+        const matchesCategory: boolean = true
+
+        const matchesSearch =
+            searchQuery === ''
+                ? true
+                : book.title
+                      .toLowerCase()
+                      .includes(searchQuery.toLowerCase()) ||
+                  (book.authors &&
+                      book.authors?.some(a =>
+                          `${a.name} ${a.lastName}`
+                              .toLowerCase()
+                              .includes(searchQuery.toLowerCase()),
+                      ))
+
+        return matchesCategory && matchesSearch
     })
 
     return (
@@ -177,12 +224,13 @@ export default function Home() {
                     {categories.length > 0 && (
                         <section className="flex flex-wrap gap-4 justify-center">
                             <button
-                                onClick={() =>
+                                onClick={() => {
+                                    setPage(0)
                                     setSearchParams({
                                         view: 'books',
                                         category: 'All',
                                     })
-                                }
+                                }}
                                 className={`px-4 py-2 text-xs font-medium uppercase tracking-wider transition-colors ${
                                     activeCategory === 'All'
                                         ? 'bg-foreground text-background'
@@ -194,12 +242,13 @@ export default function Home() {
                             {categories.map(category => (
                                 <button
                                     key={category.id}
-                                    onClick={() =>
+                                    onClick={() => {
+                                        setPage(0)
                                         setSearchParams({
                                             view: 'books',
                                             category: category.type,
                                         })
-                                    }
+                                    }}
                                     className={`px-4 py-2 text-xs font-medium uppercase tracking-wider transition-colors ${
                                         activeCategory.toUpperCase() ===
                                         category.type.toUpperCase()
@@ -211,6 +260,29 @@ export default function Home() {
                                 </button>
                             ))}
                         </section>
+                    )}
+
+                    {/* Active Search Indicator */}
+                    {searchQuery && (
+                        <div className="text-center pb-8 animate-in fade-in">
+                            <p className="text-xs font-bold uppercase tracking-widest text-gray-400">
+                                Search Results For:{' '}
+                                <span className="text-foreground">
+                                    "{searchQuery}"
+                                </span>
+                            </p>
+                            <button
+                                onClick={() =>
+                                    setSearchParams({
+                                        view: 'books',
+                                        category: activeCategory,
+                                    })
+                                }
+                                className="text-[10px] underline uppercase tracking-widest text-gray-500 hover:text-foreground mt-2"
+                            >
+                                Clear Search
+                            </button>
+                        </div>
                     )}
 
                     {/* Book Grid */}
@@ -257,6 +329,34 @@ export default function Home() {
                             </div>
                         )}
                     </section>
+                    {/* Storefront Pagination Controls */}
+                    {filteredBooks.length > 0 && (
+                        <div className="flex items-center justify-center gap-8 pt-16 border-t border-border mt-16">
+                            <button
+                                onClick={() => setPage(p => Math.max(0, p - 1))}
+                                disabled={page === 0}
+                                className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-foreground hover:text-gray-500 transition-colors disabled:opacity-30 disabled:hover:text-foreground"
+                            >
+                                <ChevronLeft className="w-4 h-4" /> Prev
+                            </button>
+
+                            <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400">
+                                Page {page + 1} of {totalPages}
+                            </span>
+
+                            <button
+                                onClick={() =>
+                                    setPage(p =>
+                                        Math.min(totalPages - 1, p + 1),
+                                    )
+                                }
+                                disabled={page >= totalPages - 1}
+                                className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-foreground hover:text-gray-500 transition-colors disabled:opacity-30 disabled:hover:text-foreground"
+                            >
+                                Next <ChevronRight className="w-4 h-4" />
+                            </button>
+                        </div>
+                    )}
                 </>
             )}
         </div>

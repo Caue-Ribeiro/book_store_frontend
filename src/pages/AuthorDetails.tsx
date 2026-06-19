@@ -41,11 +41,11 @@ export default function AuthorDetails() {
 
         const fetchAuthorData = async () => {
             if (!id) return
+            console.log(id)
 
             try {
                 setLoading(true)
 
-                // 1. Fetch the local author data to get the precise name
                 const authorRes = await api.get(`/api/authors/${id}`)
                 const fetchedAuthor = authorRes.data
 
@@ -55,28 +55,27 @@ export default function AuthorDetails() {
                 const fullName =
                     `${fetchedAuthor.name} ${fetchedAuthor.lastName}`.trim()
 
-                // 2. Fetch the Wikipedia Summary and the Bookstore Catalog in parallel
                 const [wikiRes, booksRes] = await Promise.allSettled([
                     api.get('/api/authors/summary', {
                         params: { authorName: fullName },
                     }),
-                    api.get('/api/books'),
+                    api.get('/api/books/list'),
                 ])
 
                 if (!isMounted) return
 
-                // Process Wikipedia Data
                 if (wikiRes.status === 'fulfilled' && wikiRes.value.data) {
                     setWikiData(wikiRes.value.data)
                 }
 
-                // Process Books Data and filter by this author
                 if (booksRes.status === 'fulfilled') {
                     const allBooks: Book[] =
                         booksRes.value.data.content || booksRes.value.data
                     const filteredBooks = allBooks.filter(book =>
                         book.authors?.some(a => a.id === Number(id)),
                     )
+                    console.log(allBooks)
+
                     setAuthorBooks(filteredBooks)
                 }
 

@@ -120,14 +120,14 @@ export default function BookEvents() {
                             >
                                 {/* Date Block */}
                                 <div className="md:w-52 shrink-0 border-b md:border-b-0 md:border-r border-border pb-4 md:pb-0 md:pr-8">
-                                    <span className="block text-xl font-bold tracking-tighter">
+                                    <span className="block text-xl font-bold tracking-tighter italic">
                                         from
                                     </span>
                                     <span className="block text-2xl font-bold tracking-tighter text-gray-400">
                                         {formattedStartDate}
                                     </span>
 
-                                    <span className="block text-xl font-bold tracking-tighter">
+                                    <span className="block text-xl font-bold tracking-tighter italic">
                                         to
                                     </span>
                                     <span className="block text-2xl font-bold tracking-tighter text-gray-600">

@@ -1,31 +1,48 @@
-import { Outlet, Link, useNavigate } from 'react-router-dom'
-import { Search, ShoppingBag, User, LogOut, Sparkles } from 'lucide-react'
+import { useState } from 'react'
+import { Outlet, Link, useNavigate, useSearchParams } from 'react-router-dom'
+import { Search, ShoppingBag, User, LogOut, Sparkles, X } from 'lucide-react'
 import { useAuthStore } from '../../store/useAuthStore'
 import { api } from '../../lib/api'
+import { useCartStore } from '../../store/useCartStore'
 
 export default function Layout() {
     const { token, logout } = useAuthStore()
+    const [searchParams] = useSearchParams()
+
+    const cartItemCount = useCartStore(state => state.getTotalItems())
+
     const navigate = useNavigate()
+
+    const [isSearchOpen, setIsSearchOpen] = useState(false)
+    const [searchQuery, setSearchQuery] = useState('')
 
     const handleLogout = async () => {
         try {
             await api.post('/logout')
         } catch (err) {
-            console.error(
-                'Logout failed on server, clearing local state anyway',
-                err,
-            )
+            console.error('Logout failed on server', err)
         } finally {
             logout()
             navigate('/login')
         }
     }
 
+    const handleSearchSubmit = (e: React.FormEvent) => {
+        e.preventDefault()
+        if (searchQuery.trim()) {
+            navigate(
+                `/?view=books&search=${encodeURIComponent(searchQuery.trim())}`,
+            )
+            setIsSearchOpen(false)
+            setSearchQuery('')
+        }
+    }
+
     return (
         <div className="min-h-screen flex flex-col bg-background text-foreground antialiased">
             {/* Header */}
-            <header className="sticky top-0 z-40 w-full border-b border-border bg-background/80 backdrop-blur">
-                <div className="max-w-7xl mx-auto h-16 flex items-center justify-between px-4 sm:px-6 lg:px-8">
+            <header className="sticky top-0 z-40 w-full border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
+                <div className="max-w-7xl mx-auto h-16 flex items-center justify-between px-4 sm:px-6 lg:px-8 relative">
                     <div className="flex items-center gap-8">
                         <Link
                             to="/"
@@ -33,6 +50,7 @@ export default function Layout() {
                         >
                             Bookstore
                         </Link>
+
                         <nav className="hidden md:flex items-center gap-6 text-xs font-semibold uppercase tracking-widest text-gray-500">
                             <Link
                                 to="/?view=books"
@@ -67,9 +85,17 @@ export default function Layout() {
                         </nav>
                     </div>
 
-                    <div className="flex items-center gap-4">
-                        <button className="p-2 hover:bg-muted rounded-full transition-colors">
-                            <Search className="w-5 h-5" />
+                    <div className="flex items-center gap-2 sm:gap-4">
+                        {/* Toggle Search Button */}
+                        <button
+                            onClick={() => setIsSearchOpen(!isSearchOpen)}
+                            className="p-2 hover:bg-muted rounded-full transition-colors"
+                        >
+                            {isSearchOpen ? (
+                                <X className="w-5 h-5" />
+                            ) : (
+                                <Search className="w-5 h-5" />
+                            )}
                         </button>
 
                         <Link
@@ -79,11 +105,17 @@ export default function Layout() {
                             <User className="w-5 h-5" />
                         </Link>
 
+                        {/* Cart Icon with Badge */}
                         <Link
                             to="/cart"
-                            className="p-2 hover:bg-muted rounded-full transition-colors"
+                            className="p-2 hover:bg-muted rounded-full transition-colors relative block"
                         >
                             <ShoppingBag className="w-5 h-5" />
+                            {cartItemCount > 0 && (
+                                <span className="absolute top-0 right-0 translate-x-1/4 -translate-y-1/4 bg-foreground text-background text-[9px] font-bold w-4 h-4 flex items-center justify-center rounded-full border-2 border-background">
+                                    {cartItemCount}
+                                </span>
+                            )}
                         </Link>
 
                         {token && (
@@ -96,6 +128,34 @@ export default function Layout() {
                             </button>
                         )}
                     </div>
+
+                    {/* Expandable Search Bar Overlay */}
+                    {isSearchOpen && (
+                        <div className="absolute top-full left-0 w-full bg-background border-b border-border p-4 shadow-lg animate-in slide-in-from-top-2 fade-in duration-200">
+                            <form
+                                onSubmit={handleSearchSubmit}
+                                className="max-w-2xl mx-auto relative flex items-center"
+                            >
+                                <Search className="w-4 h-4 absolute left-4 text-gray-400" />
+                                <input
+                                    type="text"
+                                    autoFocus
+                                    value={searchQuery}
+                                    onChange={e =>
+                                        setSearchQuery(e.target.value)
+                                    }
+                                    placeholder="SEARCH BY TITLE OR AUTHOR..."
+                                    className="w-full bg-muted/30 border border-border py-3 pl-12 pr-4 text-xs font-bold uppercase tracking-widest focus:outline-none focus:border-foreground transition-colors"
+                                />
+                                <button
+                                    type="submit"
+                                    className="absolute right-4 text-xs font-bold uppercase tracking-widest text-foreground hover:text-gray-500"
+                                >
+                                    Search
+                                </button>
+                            </form>
+                        </div>
+                    )}
                 </div>
             </header>
 

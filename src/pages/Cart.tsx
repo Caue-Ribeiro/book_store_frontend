@@ -1,10 +1,11 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { api } from '../lib/api'
 import { useAuthStore } from '../store/useAuthStore'
 import { Trash2, Plus, Minus, ArrowRight } from 'lucide-react'
+import { useCartStore } from '../store/useCartStore'
 
-// Interfaces matching your DTOs
 interface OrderItem {
     bookId: string
     title: string
@@ -27,18 +28,20 @@ export default function Cart() {
     const [cart, setCart] = useState<Order | null>(null)
     const [loading, setLoading] = useState(true)
     const [processing, setProcessing] = useState(false)
+    const updateItem = useCartStore(state => state.updateQuantity)
+    const removeItem = useCartStore(state => state.removeItem)
+    const clearCartItems = useCartStore(state => state.clearCart)
 
     const fetchCart = async () => {
         if (!user?.id) return
         try {
             setLoading(true)
             const response = await api.get(`/api/orders/users/${user.id}/cart`)
-            console.log(response)
 
             setCart(response.data)
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (err: any) {
             if (err.response?.status !== 404) {
-                // Ignore 404 if cart is just empty/not created yet
                 console.error('Failed to fetch cart', err)
             }
             setCart(null)
@@ -68,7 +71,7 @@ export default function Cart() {
                     `/api/orders/users/${user.id}/cart/items/${bookId}?quantity=1`,
                 )
             }
-            await fetchCart() // Refresh cart to get updated totals
+            await fetchCart()
         } catch (err) {
             console.error(`Failed to ${action} item`, err)
             alert('Could not update cart quantity.')
@@ -77,12 +80,33 @@ export default function Cart() {
         }
     }
 
+    const deleteItemFromCart = async (bookId: string) => {
+        try {
+            await api.delete(
+                `/api/orders/users/${user?.id}/cart/trash-item/${bookId}`,
+            )
+            await fetchCart()
+        } catch (error) {
+            console.log('Something went wrong.')
+        }
+    }
+
+    const clearCart = async () => {
+        if (!user?.id) return
+        try {
+            await api.delete(`/api/orders/users/clear-cart/${user?.id}`)
+            setCart(null)
+        } catch (error) {
+            console.log('Something went wrong.')
+        }
+    }
+
     const handleCheckout = async () => {
         if (!user?.id) return
         try {
             setProcessing(true)
             await api.post(`/api/orders/users/${user.id}/checkout`)
-            // Redirect to an order confirmation or payment page
+
             navigate('/orders')
         } catch (err) {
             console.error('Checkout failed', err)
@@ -162,12 +186,16 @@ export default function Cart() {
                                     <div className="flex items-center gap-4 mt-4">
                                         <div className="flex items-center border border-border">
                                             <button
-                                                onClick={() =>
+                                                onClick={() => {
+                                                    updateItem(
+                                                        item.bookId,
+                                                        item.quantity - 1,
+                                                    )
                                                     updateQuantity(
                                                         item.bookId,
                                                         'remove',
                                                     )
-                                                }
+                                                }}
                                                 disabled={processing}
                                                 className="p-2 hover:bg-muted transition-colors disabled:opacity-50"
                                             >
@@ -177,12 +205,16 @@ export default function Cart() {
                                                 {item.quantity}
                                             </span>
                                             <button
-                                                onClick={() =>
+                                                onClick={() => {
+                                                    updateItem(
+                                                        item.bookId,
+                                                        item.quantity + 1,
+                                                    )
                                                     updateQuantity(
                                                         item.bookId,
                                                         'add',
                                                     )
-                                                }
+                                                }}
                                                 disabled={processing}
                                                 className="p-2 hover:bg-muted transition-colors disabled:opacity-50"
                                             >
@@ -191,12 +223,11 @@ export default function Cart() {
                                         </div>
 
                                         <button
-                                            onClick={() =>
-                                                updateQuantity(
-                                                    item.bookId,
-                                                    'remove',
-                                                )
-                                            }
+                                            onClick={() => {
+                                                deleteItemFromCart(item.bookId)
+
+                                                removeItem(item.bookId)
+                                            }}
                                             disabled={processing}
                                             className="text-xs text-gray-400 hover:text-red-500 uppercase tracking-widest transition-colors flex items-center gap-1"
                                         >
@@ -254,6 +285,17 @@ export default function Cart() {
                                     ? 'Processing...'
                                     : 'Proceed to Checkout'}{' '}
                                 <ArrowRight className="w-4 h-4" />
+                            </button>
+                            <button
+                                onClick={() => {
+                                    clearCart()
+                                    clearCartItems()
+                                }}
+                                disabled={processing}
+                                className="w-full bg-background border-2 border-black text-black py-4 mt-4 text-sm font-medium uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-foreground hover:text-white transition-colors disabled:opacity-50"
+                            >
+                                Clear Cart
+                                <Trash2 className="w-4 h-4" />
                             </button>
                         </div>
                     </div>
