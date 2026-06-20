@@ -1,15 +1,17 @@
-import { useState } from 'react'
-import { Outlet, Link, useNavigate, useSearchParams } from 'react-router-dom'
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import { useEffect, useState } from 'react'
+import { Outlet, Link, useNavigate } from 'react-router-dom'
 import { Search, ShoppingBag, User, LogOut, Sparkles, X } from 'lucide-react'
 import { useAuthStore } from '../../store/useAuthStore'
 import { api } from '../../lib/api'
 import { useCartStore } from '../../store/useCartStore'
 
 export default function Layout() {
-    const { token, logout } = useAuthStore()
-    const [searchParams] = useSearchParams()
+    const { token, user, logout } = useAuthStore()
 
     const cartItemCount = useCartStore(state => state.getTotalItems())
+    const setCartItems = useCartStore(state => state.setCartItems)
+    const clearCart = useCartStore(state => state.clearCart)
 
     const navigate = useNavigate()
 
@@ -23,6 +25,7 @@ export default function Layout() {
             console.error('Logout failed on server', err)
         } finally {
             logout()
+            clearCart()
             navigate('/login')
         }
     }
@@ -37,6 +40,39 @@ export default function Layout() {
             setSearchQuery('')
         }
     }
+
+    useEffect(() => {
+        if (token && user?.id) {
+            const syncCart = async () => {
+                try {
+                    const response = await api.get(
+                        `/api/orders/users/${user.id}/cart`,
+                    )
+
+                    if (response.data && response.data.items) {
+                        const mappedItems = response.data.items.map(
+                            (backendItem: any) => ({
+                                book: {
+                                    id: backendItem.bookId,
+                                    title: backendItem.title,
+                                    price: backendItem.price,
+                                    coverImageUrl: backendItem.coverImageUrl,
+                                },
+                                quantity: backendItem.quantity,
+                            }),
+                        )
+
+                        setCartItems(mappedItems)
+                    }
+                } catch (err: any) {
+                    if (err.response?.status !== 404) {
+                        console.error('Failed to sync cart from database', err)
+                    }
+                }
+            }
+            syncCart()
+        }
+    }, [token, user?.id, setCartItems])
 
     return (
         <div className="min-h-screen flex flex-col bg-background text-foreground antialiased">

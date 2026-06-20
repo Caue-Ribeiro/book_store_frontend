@@ -58,7 +58,7 @@ export default function Books() {
             try {
                 const [booksRes, authorsRes, categoriesRes] = await Promise.all(
                     [
-                        api.get('/api/books'),
+                        api.get('/api/books/list'),
                         api.get('/api/authors'),
                         api.get('/api/categories'),
                     ],
@@ -128,7 +128,7 @@ export default function Books() {
             } else {
                 await api.post('/api/books', formData)
             }
-            const response = await api.get('/api/books')
+            const response = await api.get('/api/books/list')
             setBooks(response.data.content || response.data)
             handleCloseModal()
         } catch (error) {

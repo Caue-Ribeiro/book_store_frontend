@@ -65,7 +65,7 @@ export default function Dashboard() {
             try {
                 const usersResponse = await api.get('/api/users')
                 const ordersResponse = await api.get('/api/orders')
-                const booksResponse = await api.get('/api/books')
+                const booksResponse = await api.get('/api/books/list')
 
                 if (isMounted) {
                     setActiveUsers(usersResponse.data.totalElements)
@@ -75,7 +75,7 @@ export default function Dashboard() {
                     )
                     setPendingOrders(orders.length)
 
-                    const allBookStock = booksResponse.data.content
+                    const allBookStock = booksResponse.data
                         .map((book: Book) => book.stock)
                         .reduce(
                             (total: number, currentVal: number) =>
