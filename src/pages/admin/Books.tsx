@@ -1,6 +1,15 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 import { useState, useEffect } from 'react'
 import { api } from '../../lib/api'
-import { Plus, Edit2, Trash2, X, Search } from 'lucide-react'
+import {
+    Plus,
+    Edit2,
+    Trash2,
+    X,
+    Search,
+    ChevronLeft,
+    ChevronRight,
+} from 'lucide-react'
 import axios from 'axios'
 
 interface Author {
@@ -39,6 +48,8 @@ export default function Books() {
     const [categories, setCategories] = useState<Category[]>([])
     const [searchQuery, setSearchQuery] = useState('')
     const [loading, setLoading] = useState(true)
+    const [page, setPage] = useState(0)
+    const [totalPages, setTotalPages] = useState(1)
 
     const [isModalOpen, setIsModalOpen] = useState(false)
     const [editingId, setEditingId] = useState<string | null>(null)
@@ -53,18 +64,33 @@ export default function Books() {
     const [processing, setProcessing] = useState(false)
 
     useEffect(() => {
+        setPage(0)
+    }, [searchQuery])
+
+    useEffect(() => {
         let isMounted = true
-        const fetchData = async () => {
+
+        const timer = setTimeout(async () => {
             try {
+                setLoading(true)
+
+                let booksEndpoint = `/api/books?page=${page}&size=10`
+                if (searchQuery.trim() !== '') {
+                    booksEndpoint = `/api/books/search?q=${encodeURIComponent(searchQuery)}&page=${page}&size=10`
+                }
+
                 const [booksRes, authorsRes, categoriesRes] = await Promise.all(
                     [
-                        api.get('/api/books/list'),
+                        api.get(booksEndpoint),
                         api.get('/api/authors'),
                         api.get('/api/categories'),
                     ],
                 )
+
                 if (isMounted) {
                     setBooks(booksRes.data.content || booksRes.data)
+                    setTotalPages(booksRes.data.totalPages || 1)
+
                     setAuthors(authorsRes.data.content || authorsRes.data)
                     setCategories(
                         categoriesRes.data.content || categoriesRes.data,
@@ -75,19 +101,13 @@ export default function Books() {
                 if (isMounted) setLoading(false)
                 console.error('Failed to fetch admin catalog metrics', error)
             }
-        }
-        fetchData()
+        }, 300)
+
         return () => {
             isMounted = false
+            clearTimeout(timer)
         }
-    }, [])
-
-    // Derived State Search Filter
-    const filteredBooks = books.filter(
-        book =>
-            book.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            book.isbn.toString().includes(searchQuery),
-    )
+    }, [page, searchQuery])
 
     const handleOpenModal = (book?: Book) => {
         if (book) {
@@ -128,8 +148,9 @@ export default function Books() {
             } else {
                 await api.post('/api/books', formData)
             }
-            const response = await api.get('/api/books/list')
+            const response = await api.get(`/api/books?page=${page}&size=10`)
             setBooks(response.data.content || response.data)
+            setTotalPages(response.data.totalPages || 1)
             handleCloseModal()
         } catch (error) {
             if (axios.isAxiosError(error) && error.response?.status === 403) {
@@ -187,7 +208,7 @@ export default function Books() {
                     />
                 </div>
                 <span className="text-xs font-bold uppercase tracking-widest text-gray-400">
-                    {filteredBooks.length} Titles Listed
+                    {books.length} Titles Listed
                 </span>
             </div>
 
@@ -196,64 +217,91 @@ export default function Books() {
                     Loading Inventory...
                 </div>
             ) : (
-                <div className="overflow-x-auto border border-border">
-                    <table className="w-full text-left text-sm">
-                        <thead className="bg-muted/50 text-[10px] uppercase tracking-widest text-gray-500 border-b border-border">
-                            <tr>
-                                <th className="p-4 font-bold">Title</th>
-                                <th className="p-4 font-bold">ISBN</th>
-                                <th className="p-4 font-bold">Price</th>
-                                <th className="p-4 font-bold">Stock</th>
-                                <th className="p-4 font-bold text-right">
-                                    Actions
-                                </th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-border bg-background">
-                            {filteredBooks.map(book => (
-                                <tr
-                                    key={book.id}
-                                    className="hover:bg-muted/20 transition-colors"
-                                >
-                                    <td className="p-4 font-medium max-w-[200px] truncate">
-                                        {book.title}
-                                    </td>
-                                    <td className="p-4 text-gray-500 font-mono text-xs">
-                                        {book.isbn}
-                                    </td>
-                                    <td className="p-4 font-medium">
-                                        ${book.price?.toFixed(2)}
-                                    </td>
-                                    <td className="p-4">
-                                        <span
-                                            className={`px-2 py-1 text-[10px] font-bold uppercase tracking-widest ${book.stock > 10 ? 'text-green-600 bg-green-50' : book.stock > 0 ? 'text-yellow-600 bg-yellow-50' : 'text-red-500 bg-red-50'}`}
-                                        >
-                                            {book.stock} units
-                                        </span>
-                                    </td>
-                                    <td className="p-4 text-right space-x-2">
-                                        <button
-                                            onClick={() =>
-                                                handleOpenModal(book)
-                                            }
-                                            className="p-2 text-gray-400 hover:text-foreground inline-block"
-                                        >
-                                            <Edit2 className="w-4 h-4" />
-                                        </button>
-                                        <button
-                                            onClick={() =>
-                                                handleDelete(book.id)
-                                            }
-                                            className="p-2 text-gray-400 hover:text-red-500 inline-block"
-                                        >
-                                            <Trash2 className="w-4 h-4" />
-                                        </button>
-                                    </td>
+                <>
+                    <div className="overflow-x-auto border border-border">
+                        <table className="w-full text-left text-sm">
+                            <thead className="bg-muted/50 text-[10px] uppercase tracking-widest text-gray-500 border-b border-border">
+                                <tr>
+                                    <th className="p-4 font-bold">Title</th>
+                                    <th className="p-4 font-bold">ISBN</th>
+                                    <th className="p-4 font-bold">Price</th>
+                                    <th className="p-4 font-bold">Stock</th>
+                                    <th className="p-4 font-bold text-right">
+                                        Actions
+                                    </th>
                                 </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
+                            </thead>
+                            <tbody className="divide-y divide-border bg-background">
+                                {books.map(book => (
+                                    <tr
+                                        key={book.id}
+                                        className="hover:bg-muted/20 transition-colors"
+                                    >
+                                        <td className="p-4 font-medium max-w-[200px] truncate">
+                                            {book.title}
+                                        </td>
+                                        <td className="p-4 text-gray-500 font-mono text-xs">
+                                            {book.isbn}
+                                        </td>
+                                        <td className="p-4 font-medium">
+                                            ${book.price?.toFixed(2)}
+                                        </td>
+                                        <td className="p-4">
+                                            <span
+                                                className={`px-2 py-1 text-[10px] font-bold uppercase tracking-widest ${book.stock > 10 ? 'text-green-600 bg-green-50' : book.stock > 0 ? 'text-yellow-600 bg-yellow-50' : 'text-red-500 bg-red-50'}`}
+                                            >
+                                                {book.stock} units
+                                            </span>
+                                        </td>
+                                        <td className="p-4 text-right space-x-2">
+                                            <button
+                                                onClick={() =>
+                                                    handleOpenModal(book)
+                                                }
+                                                className="p-2 text-gray-400 hover:text-foreground inline-block"
+                                            >
+                                                <Edit2 className="w-4 h-4" />
+                                            </button>
+                                            <button
+                                                onClick={() =>
+                                                    handleDelete(book.id)
+                                                }
+                                                className="p-2 text-gray-400 hover:text-red-500 inline-block"
+                                            >
+                                                <Trash2 className="w-4 h-4" />
+                                            </button>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    {/* Pagination Controls */}
+                    <div className="flex items-center justify-between p-4 border-t border-border bg-muted/10">
+                        <button
+                            onClick={() => setPage(p => Math.max(0, p - 1))}
+                            disabled={page === 0}
+                            className="flex items-center gap-1 text-xs font-bold uppercase tracking-widest text-foreground hover:text-gray-500 transition-colors disabled:opacity-30 disabled:hover:text-foreground"
+                        >
+                            <ChevronLeft className="w-4 h-4" /> Previous
+                        </button>
+
+                        <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400">
+                            Page {page + 1} of {totalPages}
+                        </span>
+
+                        <button
+                            onClick={() =>
+                                setPage(p => Math.min(totalPages - 1, p + 1))
+                            }
+                            disabled={page >= totalPages - 1}
+                            className="flex items-center gap-1 text-xs font-bold uppercase tracking-widest text-foreground hover:text-gray-500 transition-colors disabled:opacity-30 disabled:hover:text-foreground"
+                        >
+                            Next <ChevronRight className="w-4 h-4" />
+                        </button>
+                    </div>
+                </>
             )}
 
             {/* Modal */}

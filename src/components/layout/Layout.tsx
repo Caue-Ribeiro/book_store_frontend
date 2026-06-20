@@ -1,7 +1,15 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useEffect, useState } from 'react'
 import { Outlet, Link, useNavigate } from 'react-router-dom'
-import { Search, ShoppingBag, User, LogOut, Sparkles, X } from 'lucide-react'
+import {
+    Search,
+    ShoppingBag,
+    User,
+    LogOut,
+    Sparkles,
+    X,
+    Settings,
+} from 'lucide-react'
 import { useAuthStore } from '../../store/useAuthStore'
 import { api } from '../../lib/api'
 import { useCartStore } from '../../store/useCartStore'
@@ -71,6 +79,8 @@ export default function Layout() {
                 }
             }
             syncCart()
+        } else {
+            clearCart()
         }
     }, [token, user?.id, setCartItems])
 
@@ -134,6 +144,18 @@ export default function Layout() {
                             )}
                         </button>
 
+                        {/* Admin Dashboard Link - ONLY visible to Admins */}
+                        {user?.role === 'ADMIN' && (
+                            <Link
+                                to="/admin"
+                                className="p-2 hover:bg-muted rounded-full transition-colors text-foreground"
+                                title="Admin Dashboard"
+                            >
+                                <Settings className="w-5 h-5" />
+                            </Link>
+                        )}
+
+                        {/* Profile Link */}
                         <Link
                             to={token ? '/profile' : '/login'}
                             className="p-2 hover:bg-muted rounded-full transition-colors"
