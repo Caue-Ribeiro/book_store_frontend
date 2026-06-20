@@ -1,5 +1,5 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 /* eslint-disable @typescript-eslint/no-explicit-any */
-
 import { useState, useEffect } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { api } from '../lib/api'
@@ -42,47 +42,41 @@ export default function Home() {
     const currentView = searchParams.get('view') || 'books'
 
     useEffect(() => {
+        setPage(0)
+    }, [searchQuery, activeCategory])
+
+    useEffect(() => {
         let isMounted = true
 
-        const fetchStorefrontData = async (activeCat: string) => {
-            let booksResponse: any,
-                categoriesResponse: any,
-                authorsResponse: any
+        const fetchStorefrontData = async () => {
             try {
                 setLoading(true)
 
-                if (activeCat == 'All') {
-                    const response = await Promise.all([
-                        api.get(`/api/books?page=${page}&size=12`),
-                        api.get('/api/categories'),
-                        api.get('/api/authors'),
-                    ])
+                let booksEndpoint = `/api/books?page=${page}&size=12`
 
-                    booksResponse = response[0]
-                    categoriesResponse = response[1]
-                    authorsResponse = response[2]
-                } else {
-                    activeCat =
-                        activeCat.includes(' ') || activeCat.includes('-')
-                            ? (activeCat = activeCat.replace(/[ -]/g, '_'))
-                            : activeCat
-
-                    const response = await Promise.all([
-                        api.get(
-                            `/api/books/category/${activeCat}?page=${page}&size=12`,
-                        ),
-                        api.get('/api/categories'),
-                        api.get('/api/authors'),
-                    ])
-
-                    booksResponse = response[0]
-                    categoriesResponse = response[1]
-                    authorsResponse = response[2]
+                if (searchQuery) {
+                    booksEndpoint = `/api/books/search?q=${encodeURIComponent(searchQuery)}&page=${page}&size=12`
+                } else if (activeCategory !== 'All') {
+                    const formattedCat =
+                        activeCategory.includes(' ') ||
+                        activeCategory.includes('-')
+                            ? activeCategory.replace(/[ -]/g, '_')
+                            : activeCategory
+                    booksEndpoint = `/api/books/category/${formattedCat}?page=${page}&size=12`
                 }
 
-                if (isMounted) {
-                    setBooks(booksResponse.data.content || booksResponse.data)
+                const response = await Promise.all([
+                    api.get(booksEndpoint),
+                    api.get('/api/categories'),
+                    api.get('/api/authors'),
+                ])
 
+                if (isMounted) {
+                    const booksResponse = response[0]
+                    const categoriesResponse = response[1]
+                    const authorsResponse = response[2]
+
+                    setBooks(booksResponse.data.content || booksResponse.data)
                     setTotalPages(booksResponse.data.totalPages || 1)
 
                     setCategories(
@@ -92,6 +86,7 @@ export default function Home() {
                     setAuthors(
                         authorsResponse.data.content || authorsResponse.data,
                     )
+
                     setLoading(false)
                 }
             } catch (err) {
@@ -109,12 +104,12 @@ export default function Home() {
             }
         }
 
-        fetchStorefrontData(activeCategory)
+        fetchStorefrontData()
 
         return () => {
             isMounted = false
         }
-    }, [page, activeCategory])
+    }, [page, activeCategory, searchQuery])
 
     if (loading) {
         return (
@@ -134,24 +129,7 @@ export default function Home() {
         )
     }
 
-    const filteredBooks = books.filter(book => {
-        const matchesCategory: boolean = true
-
-        const matchesSearch =
-            searchQuery === ''
-                ? true
-                : book.title
-                      .toLowerCase()
-                      .includes(searchQuery.toLowerCase()) ||
-                  (book.authors &&
-                      book.authors?.some(a =>
-                          `${a.name} ${a.lastName}`
-                              .toLowerCase()
-                              .includes(searchQuery.toLowerCase()),
-                      ))
-
-        return matchesCategory && matchesSearch
-    })
+    const filteredBooks = books
 
     return (
         <div className="space-y-16 pb-20">
@@ -221,7 +199,7 @@ export default function Home() {
             ) : (
                 <>
                     {/* Category Filtering Buttons */}
-                    {categories.length > 0 && (
+                    {categories.length > 0 && !searchQuery && (
                         <section className="flex flex-wrap gap-4 justify-center">
                             <button
                                 onClick={() => {
@@ -272,12 +250,13 @@ export default function Home() {
                                 </span>
                             </p>
                             <button
-                                onClick={() =>
+                                onClick={() => {
+                                    setPage(0)
                                     setSearchParams({
                                         view: 'books',
                                         category: activeCategory,
                                     })
-                                }
+                                }}
                                 className="text-[10px] underline uppercase tracking-widest text-gray-500 hover:text-foreground mt-2"
                             >
                                 Clear Search
@@ -329,8 +308,9 @@ export default function Home() {
                             </div>
                         )}
                     </section>
+
                     {/* Storefront Pagination Controls */}
-                    {filteredBooks.length > 0 && (
+                    {filteredBooks.length > 0 && totalPages > 1 && (
                         <div className="flex items-center justify-center gap-8 pt-16 border-t border-border mt-16">
                             <button
                                 onClick={() => setPage(p => Math.max(0, p - 1))}
