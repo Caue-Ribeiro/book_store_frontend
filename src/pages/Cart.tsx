@@ -4,7 +4,16 @@ import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { api } from '../lib/api'
 import { useAuthStore } from '../store/useAuthStore'
-import { Trash2, Plus, Minus, ArrowRight } from 'lucide-react'
+import {
+    Trash2,
+    Plus,
+    Minus,
+    ArrowRight,
+    Sparkles,
+    X,
+    Brain,
+    Loader2,
+} from 'lucide-react'
 import { useCartStore } from '../store/useCartStore'
 
 interface OrderItem {
@@ -23,6 +32,13 @@ interface Order {
     items: OrderItem[]
 }
 
+interface JudgmentResponse {
+    judgment: string
+    better_suggestions: string[]
+}
+
+type JudgerStep = 'warning' | 'loading' | 'result'
+
 export default function Cart() {
     const { user } = useAuthStore()
     const navigate = useNavigate()
@@ -32,6 +48,12 @@ export default function Cart() {
     const updateItem = useCartStore(state => state.updateQuantity)
     const removeItem = useCartStore(state => state.removeItem)
     const clearCartItems = useCartStore(state => state.clearCart)
+
+    const [isJudgerOpen, setIsJudgerOpen] = useState(false)
+    const [judgerStep, setJudgerStep] = useState<JudgerStep>('warning')
+    const [judgmentData, setJudgmentData] = useState<JudgmentResponse | null>(
+        null,
+    )
 
     const fetchCart = async () => {
         if (!user?.id) return
@@ -117,6 +139,29 @@ export default function Cart() {
         }
     }
 
+    const handleJudgeChoices = async () => {
+        if (!user?.id) return
+        setJudgerStep('loading')
+        try {
+            const response = await api.get(
+                `/api/orders/order-choice-judger/${user.id}`,
+            )
+            setJudgmentData(response.data)
+            setJudgerStep('result')
+        } catch (error) {
+            alert(
+                'The Book Judger is currently too busy reading Proust to judge you right now. Try again later.',
+            )
+            setIsJudgerOpen(false)
+        }
+    }
+
+    const openJudgerModal = () => {
+        setJudgerStep('warning')
+        setJudgmentData(null)
+        setIsJudgerOpen(true)
+    }
+
     if (loading) {
         return (
             <div className="py-32 text-center text-xs tracking-widest uppercase text-gray-400 animate-pulse">
@@ -128,7 +173,7 @@ export default function Cart() {
     const isEmpty = !cart || !cart.items || cart.items.length === 0
 
     return (
-        <div className="max-w-5xl mx-auto pb-24">
+        <div className="max-w-5xl mx-auto pb-24 relative">
             <h1 className="text-4xl font-bold tracking-tighter uppercase mb-12 border-b border-border pb-6">
                 Your Cart
             </h1>
@@ -226,7 +271,6 @@ export default function Cart() {
                                         <button
                                             onClick={() => {
                                                 deleteItemFromCart(item.bookId)
-
                                                 removeItem(item.bookId)
                                             }}
                                             disabled={processing}
@@ -287,6 +331,7 @@ export default function Cart() {
                                     : 'Proceed to Checkout'}{' '}
                                 <ArrowRight className="w-4 h-4" />
                             </button>
+
                             <button
                                 onClick={() => {
                                     clearCart()
@@ -298,7 +343,108 @@ export default function Cart() {
                                 Clear Cart
                                 <Trash2 className="w-4 h-4" />
                             </button>
+
+                            {/* THE AI JUDGER TRIGGER */}
+                            <button
+                                onClick={openJudgerModal}
+                                disabled={processing}
+                                className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 text-white py-4 mt-8 text-xs font-bold uppercase tracking-widest flex items-center justify-center gap-2 hover:opacity-90 transition-opacity disabled:opacity-50 shadow-lg"
+                            >
+                                <Sparkles className="w-4 h-4" /> Judge My
+                                Choices
+                            </button>
                         </div>
+                    </div>
+                </div>
+            )}
+
+            {/* AI Judger Modal */}
+            {isJudgerOpen && (
+                <div className="fixed inset-0 z-50 bg-background/95 backdrop-blur-sm flex items-center justify-center p-4">
+                    <div className="bg-background border border-border w-full max-w-lg my-8 relative shadow-2xl p-8 text-center">
+                        <button
+                            onClick={() => setIsJudgerOpen(false)}
+                            className="absolute right-4 top-4 p-2 text-gray-400 hover:text-foreground transition-colors"
+                        >
+                            <X className="w-5 h-5" />
+                        </button>
+
+                        {/* STEP 1: WARNING */}
+                        {judgerStep === 'warning' && (
+                            <div className="space-y-6 py-4">
+                                <div className="mx-auto w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center text-purple-600 mb-6">
+                                    <Brain className="w-8 h-8" />
+                                </div>
+                                <h2 className="text-2xl font-bold tracking-tight uppercase">
+                                    Are you sure you want to be teased for free?
+                                </h2>
+                                <p className="text-gray-500 text-sm">
+                                    Our elitist bookstore clerk is ready to
+                                    relentlessly mock your mainstream taste.
+                                </p>
+                                <div className="flex gap-4 justify-center pt-4">
+                                    <button
+                                        onClick={() => setIsJudgerOpen(false)}
+                                        className="px-6 py-3 border border-border text-xs font-bold uppercase tracking-widest hover:bg-muted transition-colors"
+                                    >
+                                        No, I'm Sensitive
+                                    </button>
+                                    <button
+                                        onClick={handleJudgeChoices}
+                                        className="px-6 py-3 bg-purple-600 text-white text-xs font-bold uppercase tracking-widest hover:bg-purple-700 transition-colors"
+                                    >
+                                        Yes, Roast Me
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* STEP 2: LOADING */}
+                        {judgerStep === 'loading' && (
+                            <div className="space-y-6 py-12 flex flex-col items-center">
+                                <Loader2 className="w-12 h-12 text-purple-600 animate-spin" />
+                                <h2 className="text-sm font-bold tracking-widest uppercase text-gray-500 animate-pulse">
+                                    Analyzing your terrible taste...
+                                </h2>
+                            </div>
+                        )}
+
+                        {/* STEP 3: RESULT */}
+                        {judgerStep === 'result' && judgmentData && (
+                            <div className="space-y-8 text-left">
+                                <div className="flex items-center gap-3 border-b border-border pb-4">
+                                    <Sparkles className="w-5 h-5 text-purple-600" />
+                                    <h2 className="text-xl font-bold tracking-tight uppercase">
+                                        The Verdict
+                                    </h2>
+                                </div>
+
+                                <blockquote className="text-lg italic font-serif border-l-4 border-purple-600 pl-4 py-2">
+                                    "{judgmentData.judgment}"
+                                </blockquote>
+
+                                <div className="bg-muted/30 p-6 border border-border">
+                                    <h3 className="text-[10px] font-bold uppercase tracking-widest text-gray-500 mb-4">
+                                        What you SHOULD be reading instead:
+                                    </h3>
+                                    <ul className="space-y-3">
+                                        {judgmentData.better_suggestions.map(
+                                            (suggestion, index) => (
+                                                <li
+                                                    key={index}
+                                                    className="flex gap-3 text-sm font-medium"
+                                                >
+                                                    <span className="text-purple-600">
+                                                        —
+                                                    </span>{' '}
+                                                    {suggestion}
+                                                </li>
+                                            ),
+                                        )}
+                                    </ul>
+                                </div>
+                            </div>
+                        )}
                     </div>
                 </div>
             )}
