@@ -18,6 +18,7 @@ import AdminBooks from './pages/admin/Books'
 import AdminAuthors from './pages/admin/Authors'
 import AdminCategories from './pages/admin/Categories'
 import AdminUsers from './pages/admin/Users'
+import AdminOrders from './pages/admin/Orders'
 
 function App() {
     return (
@@ -47,6 +48,7 @@ function App() {
                             element={<AdminCategories />}
                         />
                         <Route path="users" element={<AdminUsers />} />
+                        <Route path="orders" element={<AdminOrders />} />
                         {/* Future Admin Routes will go here */}
                         {/* <Route path="books" element={<AdminBooks />} /> */}
                     </Route>

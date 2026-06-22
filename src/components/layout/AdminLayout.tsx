@@ -6,6 +6,7 @@ import {
     Users,
     ArrowLeft,
     PenTool,
+    ShoppingBag,
 } from 'lucide-react'
 
 export default function AdminLayout() {
@@ -17,6 +18,7 @@ export default function AdminLayout() {
         { name: 'Categories', path: '/admin/categories', icon: Tags },
         { name: 'Authors', path: '/admin/authors', icon: PenTool },
         { name: 'Users', path: '/admin/users', icon: Users },
+        { name: 'Orders', path: '/admin/orders', icon: ShoppingBag },
     ]
 
     return (

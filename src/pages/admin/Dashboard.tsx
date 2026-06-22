@@ -66,13 +66,18 @@ export default function Dashboard() {
                 const usersResponse = await api.get('/api/users')
                 const ordersResponse = await api.get('/api/orders')
                 const booksResponse = await api.get('/api/books/list')
+                console.log(booksResponse)
+
+                console.log(ordersResponse)
 
                 if (isMounted) {
                     setActiveUsers(usersResponse.data.totalElements)
 
-                    const orders: Order[] = ordersResponse.data.filter(
-                        (order: Order) => order.status == 'AWAITING_PAYMENT',
-                    )
+                    const orders: Order[] =
+                        ordersResponse?.data?.content?.filter(
+                            (order: Order) =>
+                                order.status == 'AWAITING_PAYMENT',
+                        )
                     setPendingOrders(orders.length)
 
                     const allBookStock = booksResponse.data
@@ -95,6 +100,8 @@ export default function Dashboard() {
             isMounted = false
         }
     }, [])
+
+    console.log(inventory)
 
     return (
         <div className="space-y-8">

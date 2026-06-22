@@ -1,6 +1,12 @@
 import { useState, useEffect } from 'react'
 import { api } from '../../lib/api'
-import { Search, Shield, User as UserIcon } from 'lucide-react'
+import {
+    Search,
+    Shield,
+    User as UserIcon,
+    ChevronLeft,
+    ChevronRight,
+} from 'lucide-react'
 
 interface User {
     id: string
@@ -16,31 +22,46 @@ export default function Users() {
     const [searchQuery, setSearchQuery] = useState('')
     const [loading, setLoading] = useState(true)
 
+    // Pagination State
+    const [page, setPage] = useState(0)
+    const [totalPages, setTotalPages] = useState(1)
+
+    // Reset to page 0 when search changes
+    useEffect(() => {
+        setPage(0)
+    }, [searchQuery])
+
+    // Debounced Paginated Fetch
     useEffect(() => {
         let isMounted = true
-        const fetchUsers = async () => {
+
+        const timer = setTimeout(async () => {
             try {
-                const response = await api.get('/api/users')
+                setLoading(true)
+
+                // Switch endpoints dynamically based on search
+                let endpoint = `/api/users?page=${page}&size=10`
+                if (searchQuery.trim() !== '') {
+                    endpoint = `/api/users/search?q=${encodeURIComponent(searchQuery)}&page=${page}&size=10`
+                }
+
+                const response = await api.get(endpoint)
                 if (isMounted) {
                     setUsers(response.data.content || response.data)
+                    setTotalPages(response.data.totalPages || 1)
                     setLoading(false)
                 }
             } catch (error) {
                 if (isMounted) setLoading(false)
                 console.error(error)
             }
-        }
-        fetchUsers()
+        }, 300) // 300ms debounce
+
         return () => {
             isMounted = false
+            clearTimeout(timer)
         }
-    }, [])
-
-    const filteredUsers = users.filter(
-        user =>
-            user.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            user.name.toLowerCase().includes(searchQuery.toLowerCase()),
-    )
+    }, [page, searchQuery])
 
     return (
         <div className="space-y-8 relative">
@@ -67,7 +88,7 @@ export default function Users() {
                     />
                 </div>
                 <span className="text-xs font-bold uppercase tracking-widest text-gray-400">
-                    {filteredUsers.length} Accounts Found
+                    {users.length} Accounts On This Page
                 </span>
             </div>
 
@@ -90,7 +111,7 @@ export default function Users() {
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-border bg-background">
-                            {filteredUsers.map(user => (
+                            {users.map(user => (
                                 <tr
                                     key={user.id}
                                     className="hover:bg-muted/20 transition-colors"
@@ -134,6 +155,35 @@ export default function Users() {
                             ))}
                         </tbody>
                     </table>
+
+                    {/* Pagination Controls */}
+                    {totalPages > 1 && (
+                        <div className="flex items-center justify-between p-4 border-t border-border bg-muted/10">
+                            <button
+                                onClick={() => setPage(p => Math.max(0, p - 1))}
+                                disabled={page === 0}
+                                className="flex items-center gap-1 text-xs font-bold uppercase tracking-widest text-foreground hover:text-gray-500 transition-colors disabled:opacity-30 disabled:hover:text-foreground"
+                            >
+                                <ChevronLeft className="w-4 h-4" /> Previous
+                            </button>
+
+                            <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400">
+                                Page {page + 1} of {totalPages}
+                            </span>
+
+                            <button
+                                onClick={() =>
+                                    setPage(p =>
+                                        Math.min(totalPages - 1, p + 1),
+                                    )
+                                }
+                                disabled={page >= totalPages - 1}
+                                className="flex items-center gap-1 text-xs font-bold uppercase tracking-widest text-foreground hover:text-gray-500 transition-colors disabled:opacity-30 disabled:hover:text-foreground"
+                            >
+                                Next <ChevronRight className="w-4 h-4" />
+                            </button>
+                        </div>
+                    )}
                 </div>
             )}
         </div>

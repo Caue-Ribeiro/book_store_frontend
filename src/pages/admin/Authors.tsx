@@ -1,6 +1,15 @@
+/* eslint-disable react-hooks/set-state-in-effect */
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { useState, useEffect } from 'react'
 import { api } from '../../lib/api'
-import { Plus, Trash2, X, Search } from 'lucide-react'
+import {
+    Plus,
+    Trash2,
+    X,
+    Search,
+    ChevronLeft,
+    ChevronRight,
+} from 'lucide-react'
 
 interface Author {
     id: number
@@ -13,47 +22,66 @@ export default function Authors() {
     const [searchQuery, setSearchQuery] = useState('')
     const [loading, setLoading] = useState(true)
 
+    // Pagination State
+    const [page, setPage] = useState(0)
+    const [totalPages, setTotalPages] = useState(1)
+
     const [isModalOpen, setIsModalOpen] = useState(false)
     const [formData, setFormData] = useState({ name: '', lastName: '' })
     const [processing, setProcessing] = useState(false)
 
     useEffect(() => {
+        setPage(0)
+    }, [searchQuery])
+
+    useEffect(() => {
         let isMounted = true
-        const fetchAuthors = async () => {
+
+        const timer = setTimeout(async () => {
             try {
-                const response = await api.get('/api/authors')
+                setLoading(true)
+
+                // Switch endpoints dynamically based on search
+                let endpoint = `/api/authors?page=${page}&size=10`
+                if (searchQuery.trim() !== '') {
+                    endpoint = `/api/authors/search?q=${encodeURIComponent(searchQuery)}&page=${page}&size=10`
+                }
+
+                const response = await api.get(endpoint)
                 if (isMounted) {
-                    setAuthors(
-                        Array.isArray(response.data) ? response.data : [],
-                    )
+                    setAuthors(response.data.content || response.data)
+                    setTotalPages(response.data.totalPages || 1)
                     setLoading(false)
                 }
             } catch (error) {
                 if (isMounted) setLoading(false)
                 console.error(error)
             }
-        }
-        fetchAuthors()
+        }, 300) // 300ms debounce
+
         return () => {
             isMounted = false
+            clearTimeout(timer)
         }
-    }, [])
+    }, [page, searchQuery])
 
-    const filteredAuthors = authors.filter(
-        author =>
-            author.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            author.lastName.toLowerCase().includes(searchQuery.toLowerCase()),
-    )
+    const handleCloseModal = () => {
+        setIsModalOpen(false)
+        setFormData({ name: '', lastName: '' })
+    }
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
         setProcessing(true)
         try {
             await api.post('/api/authors', formData)
-            const response = await api.get('/api/authors')
-            setAuthors(Array.isArray(response.data) ? response.data : [])
-            setIsModalOpen(false)
-            // eslint-disable-next-line @typescript-eslint/no-unused-vars
+
+            // Refetch current paginated view after saving
+            const response = await api.get(`/api/authors?page=${page}&size=10`)
+            setAuthors(response.data.content || response.data)
+            setTotalPages(response.data.totalPages || 1)
+
+            handleCloseModal()
         } catch (error) {
             alert('Error persistent context execution maps configuration.')
         } finally {
@@ -66,7 +94,6 @@ export default function Authors() {
         try {
             await api.delete(`/api/authors/${id}`)
             setAuthors(prev => prev.filter(a => a.id !== id))
-            // eslint-disable-next-line @typescript-eslint/no-unused-vars
         } catch (error) {
             alert('Delete operation structural constraint restriction failure.')
         }
@@ -85,7 +112,7 @@ export default function Authors() {
                 </div>
                 <button
                     onClick={() => setIsModalOpen(true)}
-                    className="bg-foreground text-background px-6 py-3 text-xs font-bold uppercase tracking-widest flex items-center gap-2"
+                    className="bg-foreground text-background px-6 py-3 text-xs font-bold uppercase tracking-widest flex items-center gap-2 hover:bg-foreground/90 transition-colors"
                 >
                     <Plus className="w-4 h-4" /> Add New Author
                 </button>
@@ -103,7 +130,7 @@ export default function Authors() {
                     />
                 </div>
                 <span className="text-xs font-bold uppercase tracking-widest text-gray-400">
-                    {filteredAuthors.length} Found
+                    {authors.length} Authors On This Page
                 </span>
             </div>
 
@@ -125,7 +152,7 @@ export default function Authors() {
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-border bg-background">
-                            {filteredAuthors.map(author => (
+                            {authors.map(author => (
                                 <tr
                                     key={author.id}
                                     className="hover:bg-muted/20 transition-colors"
@@ -144,7 +171,8 @@ export default function Authors() {
                                             onClick={() =>
                                                 handleDelete(author.id)
                                             }
-                                            className="p-2 text-gray-400 hover:text-red-500"
+                                            className="p-2 text-gray-400 hover:text-red-500 transition-colors"
+                                            title="Delete"
                                         >
                                             <Trash2 className="w-4 h-4" />
                                         </button>
@@ -153,6 +181,35 @@ export default function Authors() {
                             ))}
                         </tbody>
                     </table>
+
+                    {/* Pagination Controls */}
+                    {totalPages > 1 && (
+                        <div className="flex items-center justify-between p-4 border-t border-border bg-muted/10">
+                            <button
+                                onClick={() => setPage(p => Math.max(0, p - 1))}
+                                disabled={page === 0}
+                                className="flex items-center gap-1 text-xs font-bold uppercase tracking-widest text-foreground hover:text-gray-500 transition-colors disabled:opacity-30 disabled:hover:text-foreground"
+                            >
+                                <ChevronLeft className="w-4 h-4" /> Previous
+                            </button>
+
+                            <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400">
+                                Page {page + 1} of {totalPages}
+                            </span>
+
+                            <button
+                                onClick={() =>
+                                    setPage(p =>
+                                        Math.min(totalPages - 1, p + 1),
+                                    )
+                                }
+                                disabled={page >= totalPages - 1}
+                                className="flex items-center gap-1 text-xs font-bold uppercase tracking-widest text-foreground hover:text-gray-500 transition-colors disabled:opacity-30 disabled:hover:text-foreground"
+                            >
+                                Next <ChevronRight className="w-4 h-4" />
+                            </button>
+                        </div>
+                    )}
                 </div>
             )}
 
@@ -160,8 +217,8 @@ export default function Authors() {
                 <div className="fixed inset-0 z-50 bg-background/95 backdrop-blur-sm flex items-center justify-center p-4">
                     <div className="bg-background border border-border w-full max-w-md my-8 relative shadow-2xl">
                         <button
-                            onClick={() => setIsModalOpen(false)}
-                            className="absolute right-4 top-4 p-2 text-gray-400"
+                            onClick={handleCloseModal}
+                            className="absolute right-4 top-4 p-2 text-gray-400 hover:text-foreground transition-colors"
                         >
                             <X className="w-5 h-5" />
                         </button>
@@ -185,7 +242,7 @@ export default function Authors() {
                                         })
                                     }
                                     required
-                                    className="w-full border-b border-border p-2 focus:outline-none bg-transparent"
+                                    className="w-full border-b border-border p-2 focus:outline-none focus:border-foreground bg-transparent"
                                 />
                             </div>
                             <div>
@@ -202,21 +259,21 @@ export default function Authors() {
                                         })
                                     }
                                     required
-                                    className="w-full border-b border-border p-2 focus:outline-none bg-transparent"
+                                    className="w-full border-b border-border p-2 focus:outline-none focus:border-foreground bg-transparent"
                                 />
                             </div>
                             <div className="flex justify-end gap-4 pt-6 mt-6 border-t border-border">
                                 <button
                                     type="button"
-                                    onClick={() => setIsModalOpen(false)}
-                                    className="px-6 py-3 border border-border text-xs font-bold uppercase tracking-widest"
+                                    onClick={handleCloseModal}
+                                    className="px-6 py-3 border border-border text-xs font-bold uppercase tracking-widest hover:bg-muted transition-colors"
                                 >
                                     Cancel
                                 </button>
                                 <button
                                     type="submit"
                                     disabled={processing}
-                                    className="px-8 py-3 bg-foreground text-background text-xs font-bold uppercase tracking-widest"
+                                    className="px-8 py-3 bg-foreground text-background text-xs font-bold uppercase tracking-widest hover:bg-foreground/90 transition-colors disabled:opacity-50"
                                 >
                                     {processing
                                         ? 'Processing...'
