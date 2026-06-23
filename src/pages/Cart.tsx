@@ -15,6 +15,7 @@ import {
     Loader2,
 } from 'lucide-react'
 import { useCartStore } from '../store/useCartStore'
+import bookJudger from '../assets/book_judger.gif'
 
 interface OrderItem {
     bookId: string
@@ -401,14 +402,20 @@ export default function Cart() {
 
                         {/* STEP 2: LOADING */}
                         {judgerStep === 'loading' && (
-                            <div className="space-y-6 py-12 flex flex-col items-center">
-                                <Loader2 className="w-12 h-12 text-purple-600 animate-spin" />
-                                <h2 className="text-sm font-bold tracking-widest uppercase text-gray-500 animate-pulse">
-                                    Analyzing your terrible taste...
-                                </h2>
+                            <div className="relative w-full h-full min-h-[300px] flex flex-col items-center justify-center py-12 overflow-hidden">
+                                <img
+                                    src={bookJudger}
+                                    alt="Loading background"
+                                    className="absolute  object-cover pointer-events-none"
+                                />
+
+                                <div className="relative z-10 space-y-6 mt-52 flex flex-col items-center">
+                                    <h2 className="text-sm font-bold tracking-widest uppercase text-gray-500 animate-pulse">
+                                        Analyzing your terrible taste...
+                                    </h2>
+                                </div>
                             </div>
                         )}
-
                         {/* STEP 3: RESULT */}
                         {judgerStep === 'result' && judgmentData && (
                             <div className="space-y-8 text-left">
