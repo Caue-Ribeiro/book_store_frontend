@@ -1,7 +1,7 @@
 /* eslint-disable react-hooks/set-state-in-effect */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { useState, useEffect } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { api } from '../lib/api'
 import { useAuthStore } from '../store/useAuthStore'
 import {
@@ -43,6 +43,7 @@ type JudgerStep = 'warning' | 'loading' | 'result'
 export default function Cart() {
     const { user } = useAuthStore()
     const navigate = useNavigate()
+    const [searchParams] = useSearchParams()
     const [cart, setCart] = useState<Order | null>(null)
     const [loading, setLoading] = useState(true)
     const [processing, setProcessing] = useState(false)
@@ -81,6 +82,14 @@ export default function Cart() {
             fetchCart()
         }
     }, [user, navigate])
+
+    useEffect(() => {
+        if (searchParams.get('canceled')) {
+            alert(
+                "Payment was canceled. Your cart is safe, you can try again when you're ready!",
+            )
+        }
+    }, [searchParams])
 
     const updateQuantity = async (bookId: string, action: 'add' | 'remove') => {
         if (!user?.id) return
@@ -129,9 +138,16 @@ export default function Cart() {
         if (!user?.id) return
         try {
             setProcessing(true)
-            await api.post(`/api/orders/users/${user.id}/checkout`)
+            const response = await api.post(
+                `/api/orders/users/${user.id}/checkout`,
+            )
 
-            navigate('/orders')
+            if (response.data.checkoutUrl) {
+                clearCartItems()
+                window.location.href = response.data.checkoutUrl
+            } else {
+                navigate('/orders')
+            }
         } catch (err) {
             console.error('Checkout failed', err)
             alert('Checkout failed. Please try again.')

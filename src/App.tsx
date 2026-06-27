@@ -19,6 +19,9 @@ import AdminAuthors from './pages/admin/Authors'
 import AdminCategories from './pages/admin/Categories'
 import AdminUsers from './pages/admin/Users'
 import AdminOrders from './pages/admin/Orders'
+import { loadStripe } from '@stripe/stripe-js'
+import { Elements } from '@stripe/react-stripe-js'
+import { CheckoutForm } from '@stripe/react-stripe-js/checkout'
 
 function App() {
     return (
