@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom'
 import { api } from '../lib/api'
 import { useAuthStore } from '../store/useAuthStore'
 import { Shield, Clock, Key, Package } from 'lucide-react'
+import toast from 'react-hot-toast'
+import axios from 'axios'
 
 interface AuditLog {
     id: string
@@ -39,7 +41,7 @@ export default function Profile() {
         const fetchLogs = async () => {
             try {
                 setLoadingLogs(true)
-                // Fetching the audit logs you built in the backend
+
                 const response = await api.get(
                     `/api/users/${user.id}/audit-logs?sort=timestamp,desc&size=10`,
                 )
@@ -101,6 +103,30 @@ export default function Profile() {
                     error: 'Failed to update password.',
                     success: '',
                 })
+            }
+        }
+    }
+
+    const handleSelfDeletion = async () => {
+        const confirmFirst = window.confirm(
+            'CRITICAL WARNING: Are you sure you want to permanently delete your account? This will erase your order history and cannot be undone.',
+        )
+
+        if (!confirmFirst) return
+
+        try {
+            await api.delete(`/api/users/${user?.id}`)
+            toast.success('Your account has been successfully deleted.')
+
+            logout()
+            navigate('/')
+        } catch (error) {
+            if (axios.isAxiosError(error) && error.response?.status === 401) {
+                toast.error('Session expired. Please log in again.')
+            } else {
+                toast.error(
+                    'Failed to complete account deletion. Please try again later.',
+                )
             }
         }
     }
@@ -219,6 +245,21 @@ export default function Profile() {
                             </button>
                         </div>
                     </section>
+                    <div className="p-8 border border-red-200 bg-red-50/10 space-y-4 max-w-xl">
+                        <h3 className="text-sm font-bold uppercase tracking-widest text-red-600">
+                            Danger Zone
+                        </h3>
+                        <p className="text-xs text-gray-500 uppercase tracking-wider leading-relaxed">
+                            Permanently remove your account and all associated
+                            data from our servers.
+                        </p>
+                        <button
+                            onClick={handleSelfDeletion}
+                            className="bg-red-600 text-white px-6 py-3 text-xs font-bold uppercase tracking-widest hover:bg-red-700 transition-colors"
+                        >
+                            Delete My Account
+                        </button>
+                    </div>
                 </div>
 
                 {/* Right Column: Audit Logs */}

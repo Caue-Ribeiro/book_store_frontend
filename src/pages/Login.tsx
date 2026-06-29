@@ -23,15 +23,13 @@ export default function Login() {
                 password: password,
             })
 
-            // Save token to Zustand store
             setAuth(response.data.token, {
                 id: response.data.id,
                 name: response.data.name,
-                email: email, // We already have this from the form state
+                email: email,
                 role: response.data.role,
             })
 
-            // Redirect to home page
             navigate('/')
         } catch (err: any) {
             if (err.response?.status === 423) {

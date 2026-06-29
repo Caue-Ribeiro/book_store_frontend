@@ -16,6 +16,7 @@ interface User {
     email: string
     role: string
     birthdate: string
+    deletedAt: Date | null
 }
 
 export default function Users() {
@@ -144,8 +145,12 @@ export default function Users() {
                                         {user.birthdate}
                                     </td>
                                     <td className="p-4 text-right">
-                                        <span className="text-[10px] font-bold uppercase tracking-widest text-green-600">
-                                            Active
+                                        <span
+                                            className={`text-[10px] font-bold uppercase tracking-widest ${user.deletedAt != null ? 'text-red-700' : 'text-green-600'} `}
+                                        >
+                                            {user.deletedAt != null
+                                                ? 'Inactive'
+                                                : 'Active'}
                                         </span>
                                     </td>
                                 </tr>
