@@ -22,19 +22,23 @@ interface Order {
     items: OrderItem[]
 }
 
+interface Payment {
+    orderId: string
+    action: 'pay' | 'cancel'
+}
+
 export default function Orders() {
     const { user } = useAuthStore()
     const navigate = useNavigate()
     const [orders, setOrders] = useState<Order[]>([])
     const [loading, setLoading] = useState(true)
-    const [processingId, setProcessingId] = useState<string | null>(null)
+    const [processingId, setProcessingId] = useState<Payment | null>(null)
 
     const fetchOrders = async () => {
         if (!user?.id) return
         try {
             setLoading(true)
             const response = await api.get(`/api/orders/users/${user.id}`)
-            // Assuming your backend returns a list, sort it by newest first
             const sortedOrders = response.data.sort(
                 (a: Order, b: Order) =>
                     new Date(b.moment).getTime() - new Date(a.moment).getTime(),
@@ -59,10 +63,16 @@ export default function Orders() {
     const handleAction = async (orderId: string, action: 'pay' | 'cancel') => {
         if (!user?.id) return
         try {
-            setProcessingId(orderId)
-            // Calls your specific OrderController POST endpoints
-            await api.post(`/api/orders/users/${user.id}/${orderId}/${action}`)
-            await fetchOrders() // Refresh the list to get the new status
+            setProcessingId({ orderId, action })
+            const response = await api.post(
+                `/api/orders/users/${user.id}/${orderId}/${action}`,
+            )
+            await fetchOrders()
+
+            if (response.data.checkoutUrl) {
+                // eslint-disable-next-line react-hooks/immutability
+                window.location.href = response.data.checkoutUrl
+            }
         } catch (err) {
             console.error(`Failed to ${action} order`, err)
             alert(`Could not ${action} the order. Please try again.`)
@@ -213,10 +223,13 @@ export default function Orders() {
                                         onClick={() =>
                                             handleAction(order.id, 'cancel')
                                         }
-                                        disabled={processingId === order.id}
+                                        disabled={
+                                            processingId?.orderId === order.id
+                                        }
                                         className="px-6 py-3 border border-border text-xs font-bold uppercase tracking-widest hover:bg-red-50 hover:text-red-600 hover:border-red-200 transition-colors disabled:opacity-50"
                                     >
-                                        {processingId === order.id
+                                        {processingId?.orderId === order.id &&
+                                        processingId.action == 'cancel'
                                             ? 'Processing...'
                                             : 'Cancel Order'}
                                     </button>
@@ -224,10 +237,13 @@ export default function Orders() {
                                         onClick={() =>
                                             handleAction(order.id, 'pay')
                                         }
-                                        disabled={processingId === order.id}
+                                        disabled={
+                                            processingId?.orderId === order.id
+                                        }
                                         className="px-8 py-3 bg-foreground text-background text-xs font-bold uppercase tracking-widest hover:bg-foreground/90 transition-colors disabled:opacity-50"
                                     >
-                                        {processingId === order.id
+                                        {processingId?.orderId === order.id &&
+                                        processingId.action == 'pay'
                                             ? 'Processing...'
                                             : 'Pay Now'}
                                     </button>
