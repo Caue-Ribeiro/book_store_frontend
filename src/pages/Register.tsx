@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { api } from '../lib/api'
@@ -30,7 +31,6 @@ export default function Register() {
             console.log(formData)
 
             await api.post('/api/users/register', formData)
-            // On success, redirect to login
             navigate('/login')
         } catch (err: any) {
             if (err.response?.status === 400) {

@@ -32,18 +32,14 @@ export default function Orders() {
     const [orders, setOrders] = useState<Order[]>([])
     const [loading, setLoading] = useState(true)
 
-    // Pagination State
     const [page, setPage] = useState(0)
     const [totalPages, setTotalPages] = useState(1)
 
-    // Local Search & UI State
     const [searchQuery, setSearchQuery] = useState('')
     const [processingId, setProcessingId] = useState<string | null>(null)
 
-    // Modal State
     const [selectedOrder, setSelectedOrder] = useState<Order | null>(null)
 
-    // Fetch Paginated Orders
     useEffect(() => {
         let isMounted = true
 
@@ -72,14 +68,12 @@ export default function Orders() {
         }
     }, [page])
 
-    // Local Filter (Since we didn't build a backend search endpoint for orders yet)
     const filteredOrders = orders.filter(
         order =>
             order.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
             order.userId.toLowerCase().includes(searchQuery.toLowerCase()),
     )
 
-    // Handle Status Transition
     const handleStatusUpdate = async (orderId: string, newStatus: string) => {
         setProcessingId(orderId)
         try {
@@ -87,7 +81,6 @@ export default function Orders() {
                 status: newStatus,
             })
 
-            // Update the specific order in the local state to avoid a full page refetch
             setOrders(prevOrders =>
                 prevOrders.map(order =>
                     order.id === orderId

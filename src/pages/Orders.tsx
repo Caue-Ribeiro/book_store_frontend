@@ -4,6 +4,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { api } from '../lib/api'
 import { useAuthStore } from '../store/useAuthStore'
 import { Package, CheckCircle, XCircle, Clock } from 'lucide-react'
+import toast from 'react-hot-toast'
 
 interface OrderItem {
     bookId: string
@@ -75,7 +76,7 @@ export default function Orders() {
             }
         } catch (err) {
             console.error(`Failed to ${action} order`, err)
-            alert(`Could not ${action} the order. Please try again.`)
+            toast.error(`Could not ${action} the order. Please try again.`)
         } finally {
             setProcessingId(null)
         }

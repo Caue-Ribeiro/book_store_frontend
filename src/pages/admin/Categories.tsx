@@ -43,7 +43,6 @@ export default function Categories() {
         }
     }, [])
 
-    // Derived State Search Filter
     const filteredCategories = categories.filter(category =>
         category.type.toLowerCase().includes(searchQuery.toLowerCase()),
     )

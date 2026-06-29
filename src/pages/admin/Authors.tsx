@@ -22,7 +22,6 @@ export default function Authors() {
     const [searchQuery, setSearchQuery] = useState('')
     const [loading, setLoading] = useState(true)
 
-    // Pagination State
     const [page, setPage] = useState(0)
     const [totalPages, setTotalPages] = useState(1)
 
@@ -41,7 +40,6 @@ export default function Authors() {
             try {
                 setLoading(true)
 
-                // Switch endpoints dynamically based on search
                 let endpoint = `/api/authors?page=${page}&size=10`
                 if (searchQuery.trim() !== '') {
                     endpoint = `/api/authors/search?q=${encodeURIComponent(searchQuery)}&page=${page}&size=10`
@@ -76,7 +74,6 @@ export default function Authors() {
         try {
             await api.post('/api/authors', formData)
 
-            // Refetch current paginated view after saving
             const response = await api.get(`/api/authors?page=${page}&size=10`)
             setAuthors(response.data.content || response.data)
             setTotalPages(response.data.totalPages || 1)

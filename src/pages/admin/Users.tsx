@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 import { useState, useEffect } from 'react'
 import { api } from '../../lib/api'
 import {
@@ -22,16 +23,13 @@ export default function Users() {
     const [searchQuery, setSearchQuery] = useState('')
     const [loading, setLoading] = useState(true)
 
-    // Pagination State
     const [page, setPage] = useState(0)
     const [totalPages, setTotalPages] = useState(1)
 
-    // Reset to page 0 when search changes
     useEffect(() => {
         setPage(0)
     }, [searchQuery])
 
-    // Debounced Paginated Fetch
     useEffect(() => {
         let isMounted = true
 
@@ -39,7 +37,6 @@ export default function Users() {
             try {
                 setLoading(true)
 
-                // Switch endpoints dynamically based on search
                 let endpoint = `/api/users?page=${page}&size=10`
                 if (searchQuery.trim() !== '') {
                     endpoint = `/api/users/search?q=${encodeURIComponent(searchQuery)}&page=${page}&size=10`
@@ -55,7 +52,7 @@ export default function Users() {
                 if (isMounted) setLoading(false)
                 console.error(error)
             }
-        }, 300) // 300ms debounce
+        }, 300)
 
         return () => {
             isMounted = false

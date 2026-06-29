@@ -12,10 +12,10 @@ import {
     Sparkles,
     X,
     Brain,
-    Loader2,
 } from 'lucide-react'
 import { useCartStore } from '../store/useCartStore'
 import bookJudger from '../assets/book_judger.gif'
+import toast from 'react-hot-toast'
 
 interface OrderItem {
     bookId: string
@@ -81,11 +81,12 @@ export default function Cart() {
         } else {
             fetchCart()
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [user, navigate])
 
     useEffect(() => {
         if (searchParams.get('canceled')) {
-            alert(
+            toast.error(
                 "Payment was canceled. Your cart is safe, you can try again when you're ready!",
             )
         }
@@ -107,7 +108,7 @@ export default function Cart() {
             await fetchCart()
         } catch (err) {
             console.error(`Failed to ${action} item`, err)
-            alert('Could not update cart quantity.')
+            toast.error('Could not update cart quantity.')
         } finally {
             setProcessing(false)
         }
@@ -150,7 +151,7 @@ export default function Cart() {
             }
         } catch (err) {
             console.error('Checkout failed', err)
-            alert('Checkout failed. Please try again.')
+            toast.error('Checkout failed. Please try again.')
         } finally {
             setProcessing(false)
         }
@@ -166,8 +167,9 @@ export default function Cart() {
             setJudgmentData(response.data)
             setJudgerStep('result')
         } catch (error) {
-            alert(
+            toast(
                 'The Book Judger is currently too busy reading Proust to judge you right now. Try again later.',
+                { icon: '🤷🏽‍♂️' },
             )
             setIsJudgerOpen(false)
         }

@@ -19,9 +19,6 @@ import AdminAuthors from './pages/admin/Authors'
 import AdminCategories from './pages/admin/Categories'
 import AdminUsers from './pages/admin/Users'
 import AdminOrders from './pages/admin/Orders'
-import { loadStripe } from '@stripe/stripe-js'
-import { Elements } from '@stripe/react-stripe-js'
-import { CheckoutForm } from '@stripe/react-stripe-js/checkout'
 
 function App() {
     return (
@@ -38,7 +35,6 @@ function App() {
                     <Route path="authors/:id" element={<AuthorDetails />} />
                     <Route path="events" element={<BookEvents />} />
                     <Route path="oracle" element={<ReaderDiscovery />} />
-                    {/* Future routes will go here (e.g., /books/:id, /admin) */}
                 </Route>
 
                 <Route element={<AdminRoute />}>
@@ -52,8 +48,6 @@ function App() {
                         />
                         <Route path="users" element={<AdminUsers />} />
                         <Route path="orders" element={<AdminOrders />} />
-                        {/* Future Admin Routes will go here */}
-                        {/* <Route path="books" element={<AdminBooks />} /> */}
                     </Route>
                 </Route>
             </Routes>

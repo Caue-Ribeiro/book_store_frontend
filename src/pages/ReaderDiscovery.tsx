@@ -7,6 +7,7 @@ import {
     Share,
     RotateCcw,
 } from 'lucide-react'
+import toast from 'react-hot-toast'
 
 type ViewState = 'INPUT' | 'LOADING' | 'RESULTS'
 
@@ -31,10 +32,8 @@ export default function ReaderDiscovery() {
     const [currentView, setCurrentView] = useState<ViewState>('INPUT')
     const [userInput, setUserInput] = useState('')
 
-    // Phase 2 State
     const [loadingIndex, setLoadingIndex] = useState(0)
 
-    // Phase 3 State
     const [archetypeData, setArchetypeData] = useState<ArchetypePayload | null>(
         null,
     )
@@ -83,23 +82,22 @@ export default function ReaderDiscovery() {
     const handleSubmit = async () => {
         if (userInput.trim().length >= 15) {
             setCurrentView('LOADING')
-            setLoadingIndex(0) // Reset loading string index
+            setLoadingIndex(0)
 
             try {
-                // Point this to your actual A.I. backend endpoint
                 const response = await api.post('/api/books/reader-discovery', {
                     userInput,
                 })
 
-                // Ensure the loading screen plays for at least a few seconds for aesthetic immersion
                 setTimeout(() => {
                     setArchetypeData(response.data)
                     setCurrentView('RESULTS')
                 }, 3000)
             } catch (error) {
                 console.error('Oracle calculation failed', error)
-                alert(
+                toast(
                     'The Oracle is currently clouded. Please try again later.',
+                    { icon: '🕛' },
                 )
                 setCurrentView('INPUT')
             }
@@ -131,7 +129,7 @@ export default function ReaderDiscovery() {
                 'oracle_journal',
                 JSON.stringify([...existingHistory, entry]),
             )
-            alert('Archetype securely saved to your local journal.')
+            toast.success('Archetype securely saved to your local journal.')
         } catch (err) {
             console.error('Failed to save to local storage', err)
         }
@@ -153,9 +151,8 @@ export default function ReaderDiscovery() {
                 console.error('Share action cancelled or failed', err)
             }
         } else {
-            // Fallback for desktop browsers without native share
             navigator.clipboard.writeText(shareText)
-            alert('Archetype summary copied to clipboard!')
+            toast.success('Archetype summary copied to clipboard!')
         }
     }
 
