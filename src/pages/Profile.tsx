@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { api } from '../lib/api'
 import { useAuthStore } from '../store/useAuthStore'
-import { Shield, Clock, Key, Package } from 'lucide-react'
+import { Shield, Clock, Key, Package, X, AlertTriangle } from 'lucide-react'
 import toast from 'react-hot-toast'
 import axios from 'axios'
 
@@ -17,10 +17,12 @@ export default function Profile() {
     const { user, logout } = useAuthStore()
     const navigate = useNavigate()
 
+    const [isModalOpen, setIsModalOpen] = useState(false)
+    const [isProcessing, setIsProcessing] = useState(false)
+
     const [logs, setLogs] = useState<AuditLog[]>([])
     const [loadingLogs, setLoadingLogs] = useState(true)
 
-    // Password Update State
     const [passwordForm, setPasswordForm] = useState({
         current: '',
         new: '',
@@ -70,11 +72,9 @@ export default function Profile() {
         }
 
         try {
-            // Calling your PATCH endpoint. Assuming your DTO accepts a 'password' field for updates
             await api.patch(`/api/users/${user?.id}`, {
                 password: passwordForm.new,
             })
-
             setUpdateStatus({
                 loading: false,
                 error: '',
@@ -82,7 +82,6 @@ export default function Profile() {
             })
             setPasswordForm({ current: '', new: '', confirm: '' })
 
-            // Optionally, refresh logs to show the new 'USER_UPDATED' or 'PASSWORD_RESET' action
             const response = await api.get(
                 `/api/users/${user?.id}/audit-logs?sort=timestamp,desc&size=10`,
             )
@@ -108,19 +107,17 @@ export default function Profile() {
     }
 
     const handleSelfDeletion = async () => {
-        const confirmFirst = window.confirm(
-            'CRITICAL WARNING: Are you sure you want to permanently delete your account? This will erase your order history and cannot be undone.',
-        )
-
-        if (!confirmFirst) return
-
         try {
+            setIsProcessing(true)
             await api.delete(`/api/users/${user?.id}`)
+
+            setIsModalOpen(false)
             toast.success('Your account has been successfully deleted.')
 
             logout()
             navigate('/')
         } catch (error) {
+            setIsModalOpen(false)
             if (axios.isAxiosError(error) && error.response?.status === 401) {
                 toast.error('Session expired. Please log in again.')
             } else {
@@ -128,6 +125,8 @@ export default function Profile() {
                     'Failed to complete account deletion. Please try again later.',
                 )
             }
+        } finally {
+            setIsProcessing(false)
         }
     }
 
@@ -254,12 +253,66 @@ export default function Profile() {
                             data from our servers.
                         </p>
                         <button
-                            onClick={handleSelfDeletion}
+                            onClick={() => setIsModalOpen(true)}
                             className="bg-red-600 text-white px-6 py-3 text-xs font-bold uppercase tracking-widest hover:bg-red-700 transition-colors"
                         >
                             Delete My Account
                         </button>
                     </div>
+                    {isModalOpen && (
+                        <div className="fixed inset-0 z-50 bg-background/95 backdrop-blur-sm flex items-center justify-center p-4">
+                            <div className="bg-background border border-red-200 w-full max-w-md relative shadow-2xl">
+                                {/* Close Icon */}
+                                <button
+                                    onClick={() =>
+                                        !isProcessing && setIsModalOpen(false)
+                                    }
+                                    disabled={isProcessing}
+                                    className="absolute right-4 top-4 p-2 text-gray-400 hover:text-foreground transition-colors disabled:opacity-50"
+                                >
+                                    <X className="w-5 h-5" />
+                                </button>
+
+                                <div className="p-8 space-y-6">
+                                    <div className="flex flex-col items-center text-center space-y-4">
+                                        <div className="w-16 h-16 bg-red-50 rounded-full flex items-center justify-center text-red-600">
+                                            <AlertTriangle className="w-8 h-8" />
+                                        </div>
+                                        <h2 className="text-xl font-bold tracking-tight uppercase text-red-600">
+                                            Critical Warning
+                                        </h2>
+                                        <p className="text-sm text-gray-500 leading-relaxed">
+                                            Are you sure you want to permanently
+                                            delete your account? This will erase
+                                            your order history and cannot be
+                                            undone.
+                                        </p>
+                                    </div>
+
+                                    <div className="flex gap-4 pt-4">
+                                        <button
+                                            onClick={() =>
+                                                setIsModalOpen(false)
+                                            }
+                                            disabled={isProcessing}
+                                            className="flex-1 px-6 py-3 border border-border text-xs font-bold uppercase tracking-widest hover:bg-muted transition-colors disabled:opacity-50"
+                                        >
+                                            Cancel
+                                        </button>
+                                        <button
+                                            onClick={handleSelfDeletion}
+                                            disabled={isProcessing}
+                                            className="flex-1 px-6 py-3 bg-red-600 text-white text-xs font-bold uppercase tracking-widest hover:bg-red-700 transition-colors flex justify-center items-center disabled:opacity-75"
+                                        >
+                                            {isProcessing
+                                                ? 'Processing...'
+                                                : 'Yes, Delete'}
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
                 </div>
 
                 {/* Right Column: Audit Logs */}
