@@ -19,6 +19,8 @@ import AdminAuthors from './pages/admin/Authors'
 import AdminCategories from './pages/admin/Categories'
 import AdminUsers from './pages/admin/Users'
 import AdminOrders from './pages/admin/Orders'
+import ForgotPassword from './pages/ForgotPassword'
+import ResetPassword from './pages/ResetPassword'
 
 function App() {
     return (
@@ -35,6 +37,11 @@ function App() {
                     <Route path="authors/:id" element={<AuthorDetails />} />
                     <Route path="events" element={<BookEvents />} />
                     <Route path="oracle" element={<ReaderDiscovery />} />
+                    <Route
+                        path="forgot-password"
+                        element={<ForgotPassword />}
+                    />
+                    <Route path="reset-password" element={<ResetPassword />} />
                 </Route>
 
                 <Route element={<AdminRoute />}>
