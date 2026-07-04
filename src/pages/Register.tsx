@@ -12,7 +12,7 @@ export default function Register() {
         email: '',
         birthdate: '',
         password: '',
-        role: 'client', // Defaulting to CLIENT
+        role: 'client',
     })
 
     const [error, setError] = useState('')
