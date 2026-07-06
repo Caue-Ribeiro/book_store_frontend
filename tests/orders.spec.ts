@@ -36,13 +36,6 @@ test.describe('Orders Component', () => {
             window.history.pushState({}, '', '/orders')
             window.dispatchEvent(new Event('popstate'))
         })
-    }
-
-    async function navigateToOrders1(page: Page) {
-        await page.evaluate(() => {
-            window.history.pushState({}, '', '/orders')
-            window.dispatchEvent(new Event('popstate'))
-        })
 
         await expect(
             page.getByRole('heading', { name: 'Order History', level: 1 }),
@@ -50,7 +43,7 @@ test.describe('Orders Component', () => {
     }
 
     test.beforeEach(async ({ page }) => {
-        await page.route('**/authenticate', async route => {
+        await page.route('**/api/**', async route => {
             if (route.request().method() === 'OPTIONS') {
                 await route.fulfill({
                     status: 200,
@@ -58,6 +51,15 @@ test.describe('Orders Component', () => {
                 })
                 return
             }
+
+            await route.fulfill({
+                status: 200,
+                contentType: 'application/json',
+                body: JSON.stringify([]),
+            })
+        })
+
+        await page.route('**/authenticate', async route => {
             await route.fulfill({
                 status: 200,
                 contentType: 'application/json',
@@ -74,6 +76,7 @@ test.describe('Orders Component', () => {
         await page.fill('input[type="email"]', 'user@eruditus.dev')
         await page.fill('input[type="password"]', 'Password123!')
         await page.click('button[type="submit"]')
+
         await expect(page).toHaveURL('http://localhost:5173/')
     })
 
@@ -168,7 +171,7 @@ test.describe('Orders Component', () => {
             },
         )
 
-        await navigateToOrders1(page)
+        await navigateToOrders(page)
 
         await page.getByRole('button', { name: 'Cancel Order' }).click()
 
@@ -205,7 +208,7 @@ test.describe('Orders Component', () => {
             },
         )
 
-        await navigateToOrders1(page)
+        await navigateToOrders(page)
 
         await page.getByRole('button', { name: 'Pay Now' }).click()
         await page.waitForURL('https://checkout.stripe.com/**')
