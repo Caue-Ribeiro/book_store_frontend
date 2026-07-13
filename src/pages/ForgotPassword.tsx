@@ -20,7 +20,7 @@ export default function ForgotPassword() {
         setIsSubmitting(true)
 
         try {
-            await api.post(`/forgot-password/${email}`)
+            await api.post('/forgot-password', { email })
 
             toast.success('Recovery email sent! Please check your inbox.', {
                 duration: 5000,
