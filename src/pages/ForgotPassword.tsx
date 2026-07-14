@@ -69,7 +69,7 @@ export default function ForgotPassword() {
                             onChange={e => setEmail(e.target.value)}
                             disabled={isSubmitting}
                             className="w-full border border-border bg-background p-3 text-sm focus:outline-none focus:border-foreground transition-colors disabled:opacity-50"
-                            placeholder="ADMIN@ERUDITUS.DEV"
+                            placeholder="YOUREMAIL@EMAIL.COM"
                             required
                         />
                     </div>
