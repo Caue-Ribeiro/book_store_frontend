@@ -20,8 +20,9 @@ The Book Store frontend provides a seamless shopping experience with robust glob
 
 ## 🎥 Application Demo
 
-[![Book Store Full Demo](https://img.youtube.com/vi/YOUR_VIDEO_ID/0.jpg)](https://www.youtube.com/watch?v=YOUR_VIDEO_ID)
-_Click the image above to watch the full walkthrough on YouTube._
+[![Book Store Full Demo](./src/assets/book_store_mini.png)](https://drive.google.com/file/d/1_d-iLgei5JlKa5nqXqxLnR5j4nrwSeVw/view?usp=sharing)
+
+_Click the image above to watch the full walkthrough._
 
 ---
 
@@ -110,7 +111,7 @@ npx playwright test --ui
 
 #### GitHub: @Caue-Ribeiro
 
-#### YouTube: https://www.youtube.com/@caue_dev
+#### Site: https://caueribeirodev.vercel.app/
 
 #### LinkedIn: https://www.linkedin.com/in/cau%C3%AA-ribeiro-647b07240/
 
